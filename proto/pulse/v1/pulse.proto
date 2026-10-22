@@ -68,6 +68,10 @@ message RegisterRequest {
   // choosing who gets a job is the application's decision, made at enqueue
   // time. Declaring them lets that decision be an informed one.
   repeated string capabilities = 6;
+  // facts is what this agent observed about its own host at enrollment.
+  // Opaque to the framework: the application decides what the bytes mean.
+  // Empty means the agent collected nothing.
+  bytes facts = 7;
 }
 
 // LocalConfig is the agent's own configuration. Purely informational: the
@@ -162,6 +166,10 @@ message JobAck {
   // "rejected" (local policy refuses this job; another agent will not help),
   // "unsupported_kind" (this agent cannot do this kind of work).
   string reason = 3;
+  // detail is why, in words an operator can read. reason stays the stable
+  // code the dispatcher branches on; without detail, "rejected" is all a
+  // console can show, and the rule that fired is lost.
+  string detail = 4;
 }
 
 message ServerMessage {

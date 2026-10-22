@@ -24,6 +24,12 @@ func (a *Agent) applyConfig(cfg *pulsev1.AgentConfig, run *runner) {
 			"version", cfg.GetVersion(), "error", err)
 		return
 	}
+	nextPolicy, havePolicy, err := a.previewPolicy(cfg.GetPayload())
+	if err != nil {
+		a.log.Warn("discarding pushed config; policy rejected",
+			"version", cfg.GetVersion(), "error", err)
+		return
+	}
 	// The application's part of the push is validated in the same pass, and
 	// its rejection discards the whole message too — a config is one unit.
 	if h := a.opts.OnConfigPayload; h != nil {
@@ -31,6 +37,14 @@ func (a *Agent) applyConfig(cfg *pulsev1.AgentConfig, run *runner) {
 			a.log.Warn("config payload rejected; previous config still in effect",
 				"version", cfg.GetVersion(), "error", err)
 			return
+		}
+	}
+
+	if havePolicy {
+		pol := nextPolicy
+		a.effective.Store(&pol)
+		if run != nil {
+			run.setExecutors(pol.Filter(a.baseExec))
 		}
 	}
 

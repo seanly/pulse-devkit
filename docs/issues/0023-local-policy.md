@@ -94,10 +94,10 @@ allowed_paths = ["/etc/ssl/", "/usr/local/share/ca-certificates/"]
 
 ## 验收标准
 
-- [ ] 七个约束面各有测试，含「策略拒绝 → AckRejected + 可读原因」
-- [ ] `allowed_kinds` 不匹配时 executor 根本不注册，回报 `unsupported_kind`
-- [ ] `/bin/sh`、`/bin/bash` 等写进 `allowed_bins` 被显式拒绝并说明原因
-- [ ] `agent.info` 的二进制探测走同一个白名单
-- [ ] 空配置的默认值是只读能力，有测试
-- [ ] 没有任何一条策略可以被服务端下推放宽，有测试（推一个更宽的配置，确认无效）
-- [ ] `JobAck` 加 `detail`，补上 0043 记的那处信息损失
+- [x] 七个约束面各有测试，含「策略拒绝 → AckRejected + 可读原因」
+- [x] `allowed_kinds` 不匹配时 executor 根本不注册，回报 `unsupported_kind`
+- [x] `/bin/sh`、`/bin/bash` 等写进 `allowed_bins` 被显式拒绝并说明原因
+- [x] `agent.info` 的二进制探测走同一个白名单
+- [x] 空配置的默认值是只读能力，有测试
+- [x] 没有任何一条策略可以被服务端下推放宽，有测试（推一个更宽的配置，确认无效）
+- [x] `JobAck` 加 `detail`，补上 0043 记的那处信息损失

@@ -110,6 +110,12 @@ var postgresSchema = []string{
 		updated_by  TEXT NOT NULL DEFAULT ''
 	)`,
 
+	`CREATE TABLE IF NOT EXISTS {{p}}agent_facts (
+		agent_id   TEXT PRIMARY KEY REFERENCES {{p}}agents(id) ON DELETE CASCADE,
+		facts      JSONB NOT NULL DEFAULT '{}',
+		updated_at TIMESTAMPTZ NOT NULL
+	)`,
+
 	`CREATE TABLE IF NOT EXISTS {{p}}jobs (
 		id               TEXT PRIMARY KEY,
 		group_id         TEXT,
@@ -183,6 +189,12 @@ var sqliteSchema = []string{
 		version     INTEGER NOT NULL DEFAULT 1,
 		updated_at  DATETIME NOT NULL,
 		updated_by  TEXT NOT NULL DEFAULT ''
+	)`,
+
+	`CREATE TABLE IF NOT EXISTS {{p}}agent_facts (
+		agent_id   TEXT PRIMARY KEY REFERENCES {{p}}agents(id) ON DELETE CASCADE,
+		facts      TEXT NOT NULL DEFAULT '{}',
+		updated_at DATETIME NOT NULL
 	)`,
 
 	`CREATE TABLE IF NOT EXISTS {{p}}jobs (

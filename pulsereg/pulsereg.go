@@ -35,6 +35,9 @@ type Options struct {
 	// right for a deployment that uses the registry without the queue — and
 	// means long jobs there are limited to one lease period.
 	Jobs pulse.JobStore
+	// Facts stores the opaque document an agent sends at registration. Nil
+	// discards it; the agent can still be asked later with agent.info.
+	Facts pulse.FactsStore
 	// LeaseFor is how long one renewal extends a lease. Zero means
 	// DefaultLeaseFor.
 	LeaseFor time.Duration
@@ -61,6 +64,7 @@ type Service struct {
 	tokens  pulse.TokenStore
 	configs pulse.ConfigStore
 	jobs    pulse.JobStore
+	facts   pulse.FactsStore
 	// leaseFor is how long a renewal extends a lease.
 	leaseFor time.Duration
 	sink     pulse.Sink
@@ -106,6 +110,7 @@ func New(o Options) (*Service, error) {
 		tokens:   o.Tokens,
 		configs:  o.Configs,
 		jobs:     o.Jobs,
+		facts:    o.Facts,
 		leaseFor: leaseFor,
 		sink:     o.Sink,
 		signer:   sg,
@@ -138,6 +143,8 @@ type RegisterInput struct {
 	LocalConfig    pulse.LocalConfig
 	// PeerIP is from the connection, never from the payload.
 	PeerIP string
+	// Facts is the opaque document the agent collected at registration.
+	Facts []byte
 }
 
 // RegisterResult is everything the agent needs to persist for later calls.
@@ -220,6 +227,11 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (RegisterResul
 			s.log.Warn("enrollment refused: invalid bootstrap token", "name", name, "remote", in.PeerIP)
 		}
 		return RegisterResult{}, err
+	}
+	if s.facts != nil && len(in.Facts) > 0 {
+		if err := s.facts.SaveFacts(ctx, agent.ID, in.Facts); err != nil {
+			return RegisterResult{}, err
+		}
 	}
 	effective := agent.Labels
 

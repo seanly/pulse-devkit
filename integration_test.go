@@ -66,8 +66,8 @@ func (s *sink) Deliver(ctx context.Context, agentID string, r pulse.Result) (boo
 	return true, nil
 }
 
-func (s *sink) Ack(agentID, jobID string, accepted bool, reason string) {
-	s.queue.Ack(agentID, jobID, accepted, reason)
+func (s *sink) Ack(agentID, jobID string, accepted bool, reason, detail string) {
+	s.queue.Ack(agentID, jobID, accepted, reason, detail)
 }
 
 // Progress is required by the sink. This test's jobs finish in one result,

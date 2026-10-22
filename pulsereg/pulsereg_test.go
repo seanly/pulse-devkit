@@ -72,6 +72,29 @@ func TestRegisterIssuesVerifiableCredential(t *testing.T) {
 	}
 }
 
+func TestRegisterSavesFacts(t *testing.T) {
+	svc, store, _ := newService(t, func(o *pulsereg.Options) { o.Facts = o.Agents.(*pulsetest.Store) })
+	// newService builds the store before mutate, so the pointer above is the
+	// same store the service uses. Pass it explicitly.
+	_ = store
+	ctx := context.Background()
+	token := mintToken(t, svc, nil)
+	raw := []byte(`{"os":"linux","distro":"debian"}`)
+	res, err := svc.Register(ctx, pulsereg.RegisterInput{
+		BootstrapToken: token, Name: "probe-facts", Facts: raw,
+	})
+	if err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	got, err := store.GetFacts(ctx, res.AgentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(raw) {
+		t.Fatalf("facts = %s, want %s", got, raw)
+	}
+}
+
 func TestTokenIsSingleUse(t *testing.T) {
 	svc, _, _ := newService(t, nil)
 	ctx := context.Background()

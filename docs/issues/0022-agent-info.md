@@ -102,9 +102,9 @@ type FactsStore interface {
 
 ## 验收标准
 
-- [ ] 注册时带上一份 facts
-- [ ] 服务端可按需派发 `agent.info`，带 binaries/mounts 查询参数
-- [ ] 二进制探测受本地白名单约束 —— 不在白名单的程序不执行 `--version`，有测试
-- [ ] 不做周期性自动上报
-- [ ] `FactsStore` 端口 + 参考实现 + 契约测试
-- [ ] facts 里没有任何判定字段
+- [x] 注册时带上一份 facts
+- [x] 服务端可按需派发 `agent.info`，带 binaries/mounts 查询参数
+- [x] 二进制探测受本地白名单约束 —— 不在白名单的程序不执行 `--version`，有测试
+- [x] 不做周期性自动上报
+- [x] `FactsStore` 端口 + 参考实现 + 契约测试
+- [x] facts 里没有任何判定字段

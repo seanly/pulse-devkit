@@ -54,6 +54,15 @@ type Agent struct {
 	// admit is the optional local policy check, installed by WithAdmitter.
 	admit atomic.Pointer[admitFunc]
 
+	// baseExec is every executor the host registered, before policy filtering.
+	// A push can only remove from this set, so the unfiltered map has to
+	// outlive startup.
+	baseExec Executors
+	// localPolicy is the owner's floor. Nil means the host opted out of
+	// filtering. effective is that floor after any tightening push.
+	localPolicy *Policy
+	effective   atomic.Pointer[Policy]
+
 	// stop shuts the agent down from a server Command; it cancels the same
 	// context SIGTERM does, so graceful drain applies either way.
 	stop context.CancelFunc
@@ -79,6 +88,15 @@ func New(o Options) (*Agent, error) {
 	if o.Executors == nil {
 		o.Executors = Executors{}
 	}
+	base := copyExecutors(o.Executors)
+	if o.Policy != nil {
+		p := o.Policy.withDefaultKinds()
+		if err := p.Validate(); err != nil {
+			return nil, err
+		}
+		o.Policy = &p
+		o.Executors = p.Filter(base)
+	}
 	if o.Backoff == (pulse.Backoff{}) {
 		o.Backoff = pulse.DefaultBackoff()
 	}
@@ -90,7 +108,11 @@ func New(o Options) (*Agent, error) {
 	}
 	o.Config.Limits = o.Config.Limits.withDefaults()
 
-	a := &Agent{opts: o, log: o.Logger, api: o.API}
+	a := &Agent{opts: o, log: o.Logger, api: o.API, baseExec: base, localPolicy: o.Policy}
+	if o.Policy != nil {
+		pol := *o.Policy
+		a.effective.Store(&pol)
+	}
 	cfg := o.Config
 	a.cfg.Store(&cfg)
 	lim := cfg.Limits
@@ -202,6 +224,7 @@ func (a *Agent) register(ctx context.Context) (Credential, error) {
 		Labels:         cfg.Labels,
 		LocalConfig:    LocalConfigToProto(a.localConfig()),
 		Capabilities:   caps,
+		Facts:          a.registrationFacts(),
 	})
 	if err != nil {
 		return Credential{}, fmt.Errorf("pulseagent: register: %w", err)
@@ -213,6 +236,21 @@ func (a *Agent) register(ctx context.Context) (Credential, error) {
 	a.log.Info("registered", "agent_id", cred.AgentID, "file", cfg.CredentialFile, "mode", "0600")
 	logLabelDivergence(a.log, cfg.Labels, res.GetEffectiveLabels())
 	return cred, nil
+}
+
+// registrationFacts collects the host's first facts document. A collector
+// that fails is logged and omitted: enrollment must not wait on a fact the
+// server can ask for again with agent.info.
+func (a *Agent) registrationFacts() []byte {
+	if a.opts.CollectFacts == nil {
+		return nil
+	}
+	raw, err := a.opts.CollectFacts()
+	if err != nil {
+		a.log.Warn("facts collection failed; registering without them", "error", err)
+		return nil
+	}
+	return raw
 }
 
 // localConfig reports what this agent's own configuration says, so a console

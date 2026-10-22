@@ -31,11 +31,12 @@ type FSPut struct {
     // Backup 为真时保留被替换的内容，供回滚使用。
     Backup bool `json:"backup,omitempty"`
 
-    // ConfirmWithinMS 是死人开关：写入后若在这段时间内 agent 没有成功连上
-    // 服务端一次，自动恢复备份。0 表示不启用（也就要求 Backup 为真）。
+    // ConfirmWithin 是死人开关：写入后若在这段时间内 agent 没有成功连上
+    // 服务端一次，自动恢复备份。0 表示不启用。
     //
+    // 已发布的 JSON 名是 confirm_within_ns（time.Duration），不再改名。
     // 这是唯一只有 agent 能实现的安全机制，见下。
-    ConfirmWithinMS int64 `json:"confirm_within_ms,omitempty"`
+    ConfirmWithin time.Duration `json:"confirm_within_ns,omitempty"`
 }
 
 // FSPutResult 回报的载荷。
@@ -75,7 +76,7 @@ agent 写入新 bundle
 
 服务端**无法补救**这种情况，因为它恰好失去了通道。它看到的只是「agent 掉线了」，和网络故障一模一样。
 
-所以 `ConfirmWithinMS`：
+所以 `ConfirmWithin`（JSON `confirm_within_ns`）：
 
 ```
 写入 → 启动计时器 → 正常连上服务端并心跳成功一次 → 清除计时器
@@ -90,11 +91,11 @@ agent 写入新 bundle
 
 ## 验收标准
 
-- [ ] 内容相同 → `changed=false`，文件的 mtime 不变，有测试
-- [ ] 原子写：中途失败不留半个文件，有测试
-- [ ] mode/owner/group 生效；只改 mode 也算 `changed`
-- [ ] `Backup` 保留旧内容并在结果里给出路径
-- [ ] 死人开关：模拟「写入后连不上服务端」，确认自动恢复，有测试
-- [ ] 死人开关在 agent 重启后仍然有效（计时器状态要落盘，不能只在内存）
-- [ ] `fs.get` 有大小上限
-- [ ] 全部操作受本地路径白名单约束（issue 0023）
+- [x] 内容相同 → `changed=false`，文件的 mtime 不变，有测试
+- [x] 原子写：中途失败不留半个文件，有测试
+- [x] mode/owner/group 生效；只改 mode 也算 `changed`
+- [x] `Backup` 保留旧内容并在结果里给出路径
+- [x] 死人开关：模拟「写入后连不上服务端」，确认自动恢复，有测试
+- [x] 死人开关在 agent 重启后仍然有效（计时器状态要落盘，不能只在内存）
+- [x] `fs.get` 有大小上限
+- [x] 全部操作受本地路径白名单约束（issue 0023）

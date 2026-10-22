@@ -302,8 +302,9 @@ type Sink interface {
 	// it (a replay, or an unknown job) and the agent should not retry.
 	Deliver(ctx context.Context, agentID string, r Result) (accepted bool, err error)
 	// Ack reacts to an agent's accept/reject of a dispatched job. Reasons are
-	// the Ack* constants.
-	Ack(agentID string, jobID string, accepted bool, reason string)
+	// the Ack* constants. detail is the operator-readable explanation; the
+	// dispatcher still branches on reason alone.
+	Ack(agentID string, jobID string, accepted bool, reason, detail string)
 	// Progress receives incremental output from a running job.
 	//
 	// Called from the receive loop like Ack, and under far more pressure: a
@@ -315,6 +316,19 @@ type Sink interface {
 	// what makes that detectable; an implementation that ignores it will
 	// silently assemble a log with a hole in it.
 	Progress(agentID string, p ProgressChunk)
+}
+
+// FactsStore persists what an agent reported about its own host.
+//
+// The bytes are opaque. The framework moves them; the application decides
+// what they mean. That is the same rule as a job payload: two applications
+// reading one agent's facts can care about different fields.
+type FactsStore interface {
+	SaveFacts(ctx context.Context, agentID string, raw []byte) error
+	GetFacts(ctx context.Context, agentID string) ([]byte, error)
+	// ListFacts is one read of the whole fleet, for a caller that is about to
+	// choose targets from what the machines themselves reported.
+	ListFacts(ctx context.Context) (map[string][]byte, error)
 }
 
 // ProgressChunk is incremental output from a job that is still running.

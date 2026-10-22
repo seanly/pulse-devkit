@@ -201,7 +201,11 @@ type RegisterRequest struct {
 	// them and makes them queryable, but does NOT filter dispatch on them:
 	// choosing who gets a job is the application's decision, made at enqueue
 	// time. Declaring them lets that decision be an informed one.
-	Capabilities  []string `protobuf:"bytes,6,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	Capabilities []string `protobuf:"bytes,6,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	// facts is what this agent observed about its own host at enrollment.
+	// Opaque to the framework: the application decides what the bytes mean.
+	// Empty means the agent collected nothing.
+	Facts         []byte `protobuf:"bytes,7,opt,name=facts,proto3" json:"facts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -274,6 +278,13 @@ func (x *RegisterRequest) GetLocalConfig() *LocalConfig {
 func (x *RegisterRequest) GetCapabilities() []string {
 	if x != nil {
 		return x.Capabilities
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetFacts() []byte {
+	if x != nil {
+		return x.Facts
 	}
 	return nil
 }
@@ -549,8 +560,8 @@ type JobProgress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	JobId string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	// seq starts at 1 and increases by one per message for this job. The server
-	// uses it to detect gaps and reordering — a log with a missing middle is more
-	// dangerous than one that is visibly truncated, because it reads as
+	// uses it to detect gaps and reordering — a log with a missing middle is
+	// more dangerous than one that is visibly truncated, because it reads as
 	// complete.
 	Seq uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
 	// stream is "stdout" or "stderr", kept apart rather than interleaved.
@@ -759,7 +770,11 @@ type JobAck struct {
 	// reason is a short stable code: "busy" (at capacity, try another agent),
 	// "rejected" (local policy refuses this job; another agent will not help),
 	// "unsupported_kind" (this agent cannot do this kind of work).
-	Reason        string `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	Reason string `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	// detail is why, in words an operator can read. reason stays the stable
+	// code the dispatcher branches on; without detail, "rejected" is all a
+	// console can show, and the rule that fired is lost.
+	Detail        string `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -811,6 +826,13 @@ func (x *JobAck) GetAccepted() bool {
 func (x *JobAck) GetReason() string {
 	if x != nil {
 		return x.Reason
+	}
+	return ""
+}
+
+func (x *JobAck) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
 	return ""
 }
@@ -1352,14 +1374,15 @@ const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\x10FetchBlobRequest\x12\x16\n" +
 	"\x06digest\x18\x01 \x01(\tR\x06digest\"!\n" +
 	"\tBlobChunk\x12\x14\n" +
-	"\x05chunk\x18\x01 \x01(\fR\x05chunk\"\xc0\x02\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk\"\xd6\x02\n" +
 	"\x0fRegisterRequest\x12'\n" +
 	"\x0fbootstrap_token\x18\x01 \x01(\tR\x0ebootstrapToken\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12=\n" +
 	"\x06labels\x18\x04 \x03(\v2%.pulse.v1.RegisterRequest.LabelsEntryR\x06labels\x128\n" +
 	"\flocal_config\x18\x05 \x01(\v2\x15.pulse.v1.LocalConfigR\vlocalConfig\x12\"\n" +
-	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\x1a9\n" +
+	"\fcapabilities\x18\x06 \x03(\tR\fcapabilities\x12\x14\n" +
+	"\x05facts\x18\a \x01(\fR\x05facts\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xef\x01\n" +
@@ -1400,11 +1423,12 @@ const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12\x12\n" +
 	"\x04load\x18\x02 \x01(\x01R\x04load\x12!\n" +
 	"\frunning_jobs\x18\x03 \x01(\x05R\vrunningJobs\x12%\n" +
-	"\x0econfig_version\x18\x04 \x01(\x03R\rconfigVersion\"S\n" +
+	"\x0econfig_version\x18\x04 \x01(\x03R\rconfigVersion\"k\n" +
 	"\x06JobAck\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x1a\n" +
 	"\baccepted\x18\x02 \x01(\bR\baccepted\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x9d\x01\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x16\n" +
+	"\x06detail\x18\x04 \x01(\tR\x06detail\"\x9d\x01\n" +
 	"\rServerMessage\x12!\n" +
 	"\x03job\x18\x01 \x01(\v2\r.pulse.v1.JobH\x00R\x03job\x12-\n" +
 	"\acommand\x18\x02 \x01(\v2\x11.pulse.v1.CommandH\x00R\acommand\x12/\n" +

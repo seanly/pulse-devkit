@@ -146,6 +146,12 @@ type Options struct {
 	// end to end and reports CodeNoExecutor for everything, which is a useful
 	// way to verify enrollment before writing any business logic.
 	Executors Executors
+	// Policy filters Executors and admits jobs. Nil means the host did not
+	// opt in, and every registered executor stays registered — the framework's
+	// own tests rely on that. A host whose configuration file has no policy
+	// section should pass DefaultPolicy, so an upgrade does not suddenly
+	// grant write access.
+	Policy *Policy
 	// Version is this build's version, reported at registration and in every
 	// heartbeat. The framework does not own a version global.
 	Version string
@@ -180,6 +186,14 @@ type Options struct {
 	// StaleTimeout will get the agent declared offline, so this exists for
 	// tests rather than for tuning.
 	HeartbeatInterval time.Duration
+	// OnServerContact runs after a heartbeat is written to the stream. A
+	// dead-man's switch clears itself here: the agent has reached the server,
+	// so a write that was waiting on that fact can stand.
+	OnServerContact func()
+	// CollectFacts runs at registration and its bytes are stored as the
+	// agent's first facts document. Nil sends nothing. The framework does
+	// not interpret the bytes.
+	CollectFacts func() ([]byte, error)
 	// DrainTimeout bounds graceful shutdown. Zero means pulse.DrainTimeout.
 	DrainTimeout time.Duration
 }

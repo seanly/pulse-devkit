@@ -43,6 +43,9 @@ func (a *Agent) session(ctx context.Context, cred Credential) error {
 					sendErr <- err
 					return
 				}
+				if msg.GetHeartbeat() != nil && a.opts.OnServerContact != nil {
+					a.opts.OnServerContact()
+				}
 			case <-senderDone:
 				sendErr <- nil
 				return
@@ -61,11 +64,21 @@ func (a *Agent) session(ctx context.Context, cred Credential) error {
 	}
 
 	lim := *a.lim.Load()
-	var admit func(pulse.Job) error
-	if boxed := a.admit.Load(); boxed != nil {
-		admit = boxed.fn
+	admit := func(job pulse.Job) error {
+		if p := a.effective.Load(); p != nil {
+			if err := p.Admit(job); err != nil {
+				return err
+			}
+		}
+		if boxed := a.admit.Load(); boxed != nil && boxed.fn != nil {
+			return boxed.fn(job)
+		}
+		return nil
 	}
 	run := newRunner(&a.opts, lim, admit)
+	if p := a.effective.Load(); p != nil {
+		run.setExecutors(p.Filter(a.baseExec))
+	}
 	a.run.Store(run)
 	defer a.run.Store(nil)
 

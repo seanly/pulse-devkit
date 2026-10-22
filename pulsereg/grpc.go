@@ -43,6 +43,7 @@ func (g *GRPCServer) Register(ctx context.Context, req *pulsev1.RegisterRequest)
 		Capabilities:   req.GetCapabilities(),
 		LocalConfig:    pulseagent.LocalConfigFromProto(req.GetLocalConfig()),
 		PeerIP:         PeerIP(ctx),
+		Facts:          req.GetFacts(),
 	})
 	if err != nil {
 		return nil, mapRegistryError(err)
@@ -109,7 +110,7 @@ func (g *GRPCServer) Connect(stream pulsev1.AgentService_ConnectServer) error {
 				ack := payload.JobAck
 				// Must not block: this loop also carries heartbeats, and a
 				// slow sink here would get the agent declared offline.
-				g.svc.sink.Ack(agent.ID, ack.GetJobId(), ack.GetAccepted(), ack.GetReason())
+				g.svc.sink.Ack(agent.ID, ack.GetJobId(), ack.GetAccepted(), ack.GetReason(), ack.GetDetail())
 			}
 		case *pulsev1.AgentMessage_Lease:
 			// Lease renewal for a long-running job. Extending it here is what

@@ -263,7 +263,7 @@ func TestBusyAckReturnsJobForAnotherAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	d.Ack("a1", "j1", false, pulse.AckBusy)
+	d.Ack("a1", "j1", false, pulse.AckBusy, "")
 
 	j, err := store.GetJob(ctx, "j1")
 	if err != nil {
@@ -286,7 +286,7 @@ func TestAcceptedAckLeavesTheLeaseAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	d.Ack("a1", "j1", true, "")
+	d.Ack("a1", "j1", true, "", "")
 
 	j, err := store.GetJob(ctx, "j1")
 	if err != nil {
@@ -307,7 +307,7 @@ func TestRejectedAndUnsupportedAcksRequeue(t *testing.T) {
 			if err := d.DispatchOnce(ctx); err != nil {
 				t.Fatal(err)
 			}
-			d.Ack("a1", "j1", false, reason)
+			d.Ack("a1", "j1", false, reason, "")
 
 			j, err := store.GetJob(ctx, "j1")
 			if err != nil {

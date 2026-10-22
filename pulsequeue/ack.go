@@ -14,7 +14,7 @@ import (
 // It is called from a stream's receive loop, which also carries that agent's
 // heartbeats, so it must not block on anything slow. The store calls here are
 // single-row writes; anything heavier belongs on its own goroutine.
-func (d *Dispatcher) Ack(agentID, jobID string, accepted bool, reason string) {
+func (d *Dispatcher) Ack(agentID, jobID string, accepted bool, reason, detail string) {
 	if accepted {
 		// Nothing to do: the lease already says the agent has it.
 		return
@@ -34,23 +34,30 @@ func (d *Dispatcher) Ack(agentID, jobID string, accepted bool, reason string) {
 	case pulse.AckBusy:
 		// Another agent can run it right now.
 		d.log.Debug("agent declined job as busy; requeueing", "job_id", jobID, "agent_id", agentID)
-		d.requeue(ctx, j, "agent busy")
+		d.requeue(ctx, j, declineText("agent busy", detail))
 	case pulse.AckUnsupportedKind:
 		// Re-dispatching to the same agent is pointless, and the application
 		// chose this agent, so the requeue is a signal to it rather than a
 		// retry that will work on its own.
 		d.log.Warn("agent cannot execute this kind of job",
 			"job_id", jobID, "agent_id", agentID, "kind", j.Kind)
-		d.requeue(ctx, j, "agent does not support kind "+j.Kind)
+		d.requeue(ctx, j, declineText("agent does not support kind "+j.Kind, detail))
 	case pulse.AckRejected:
 		d.log.Info("agent rejected job by local policy", "job_id", jobID, "agent_id", agentID)
-		d.requeue(ctx, j, "rejected by agent policy")
+		d.requeue(ctx, j, declineText("rejected by agent policy", detail))
 	default:
 		d.log.Warn("agent declined job with an unknown reason; requeueing",
 			"job_id", jobID, "agent_id", agentID, "reason", reason)
-		d.requeue(ctx, j, "declined: "+reason)
+		d.requeue(ctx, j, declineText("declined: "+reason, detail))
 	}
 	d.Wake()
+}
+
+func declineText(fallback, detail string) string {
+	if detail == "" {
+		return fallback
+	}
+	return fallback + ": " + detail
 }
 
 // Complete marks a dispatched job finished.

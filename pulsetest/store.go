@@ -23,6 +23,7 @@ type Store struct {
 	tokens map[string]*pulse.BootstrapToken
 	cfgs   map[string]*pulse.AgentConfig
 	jobs   map[string]*pulse.Job
+	facts  map[string][]byte
 	// order preserves insertion order for jobs, so leasing is FIFO like a
 	// real queue's "ORDER BY created_at, id".
 	order []string
@@ -53,6 +54,7 @@ func NewStore(opts ...StoreOption) *Store {
 		tokens: map[string]*pulse.BootstrapToken{},
 		cfgs:   map[string]*pulse.AgentConfig{},
 		jobs:   map[string]*pulse.Job{},
+		facts:  map[string][]byte{},
 	}
 	for _, o := range opts {
 		o(s)
@@ -424,4 +426,46 @@ func (s *Store) DeleteAgentConfig(_ context.Context, agentID string) error {
 	}
 	delete(s.cfgs, agentID)
 	return nil
+}
+
+// SaveFacts replaces the opaque facts document for an agent.
+func (s *Store) SaveFacts(_ context.Context, agentID string, raw []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.taken(); err != nil {
+		return err
+	}
+	if len(raw) == 0 {
+		raw = []byte("{}")
+	}
+	s.facts[agentID] = append([]byte(nil), raw...)
+	return nil
+}
+
+// GetFacts returns the last facts saved for an agent, or an empty document.
+func (s *Store) GetFacts(_ context.Context, agentID string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.taken(); err != nil {
+		return nil, err
+	}
+	raw, ok := s.facts[agentID]
+	if !ok {
+		return []byte("{}"), nil
+	}
+	return append([]byte(nil), raw...), nil
+}
+
+// ListFacts returns every agent's facts.
+func (s *Store) ListFacts(_ context.Context) (map[string][]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.taken(); err != nil {
+		return nil, err
+	}
+	out := make(map[string][]byte, len(s.facts))
+	for id, raw := range s.facts {
+		out[id] = append([]byte(nil), raw...)
+	}
+	return out, nil
 }

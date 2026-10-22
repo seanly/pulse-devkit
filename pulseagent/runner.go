@@ -24,7 +24,7 @@ type runner struct {
 	log       *slog.Logger
 	metrics   pulse.Metrics
 	clock     pulse.Clock
-	executors Executors
+	executors atomic.Pointer[Executors]
 
 	// admit, when non-nil, vets a job before it is accepted. pulseguard
 	// installs one; a plain agent has none.
@@ -74,13 +74,17 @@ func newRunner(o *Options, lim Limits, admit func(pulse.Job) error) *runner {
 		log:       o.Logger,
 		metrics:   o.Metrics,
 		clock:     o.Clock,
-		executors: o.Executors,
 		admit:     admit,
 		// Burst equals the limit: a burst of 1 would serialise jobs that the
 		// concurrency gate has already agreed to run in parallel.
 		qps:             rate.NewLimiter(rate.Limit(lim.QPS), lim.QPS),
 		leaseRenewEvery: o.HeartbeatInterval,
 	}
+	execs := o.Executors
+	if execs == nil {
+		execs = Executors{}
+	}
+	r.executors.Store(&execs)
 	r.timeout.Store(int64(lim.Timeout))
 	r.gate.setLimit(lim.Concurrency)
 	return r
@@ -100,12 +104,12 @@ func (r *runner) dispatch(ctx context.Context, msg *pulsev1.Job, send sendFunc, 
 	r.metrics.Inc(pulse.MetricJobsReceived)
 	job := jobFromProto(msg)
 
-	ack := func(accepted bool, reason string) {
+	ack := func(accepted bool, reason, detail string) {
 		if !accepted {
 			r.metrics.Inc(pulse.MetricJobsRejected)
 		}
 		if err := send(&pulsev1.AgentMessage{Payload: &pulsev1.AgentMessage_JobAck{
-			JobAck: &pulsev1.JobAck{JobId: job.ID, Accepted: accepted, Reason: reason},
+			JobAck: &pulsev1.JobAck{JobId: job.ID, Accepted: accepted, Reason: reason, Detail: detail},
 		}}); err != nil {
 			r.log.Warn("ack failed", "job_id", job.ID, "error", err)
 		}
@@ -114,16 +118,16 @@ func (r *runner) dispatch(ctx context.Context, msg *pulsev1.Job, send sendFunc, 
 	// Shutting down: decline so the server re-dispatches elsewhere instead of
 	// waiting out a lease on an agent that is leaving.
 	if r.drained.Load() {
-		ack(false, pulse.AckBusy)
+		ack(false, pulse.AckBusy, "")
 		return
 	}
 
-	exec, ok := r.executors[job.Kind]
+	exec, ok := r.lookup(job.Kind)
 	if !ok {
 		// Saying so beats silence: the skeleton runs end to end and reports
 		// why nothing happened.
 		r.log.Warn("no executor for kind; declining", "job_id", job.ID, "kind", job.Kind)
-		ack(false, pulse.AckUnsupportedKind)
+		ack(false, pulse.AckUnsupportedKind, job.Kind)
 		return
 	}
 
@@ -131,7 +135,7 @@ func (r *runner) dispatch(ctx context.Context, msg *pulsev1.Job, send sendFunc, 
 		if err := r.admit(job); err != nil {
 			r.log.Info("job rejected by local policy",
 				"job_id", job.ID, "subject", job.SubjectID, "error", err)
-			ack(false, pulse.AckRejected)
+			ack(false, pulse.AckRejected, err.Error())
 			return
 		}
 	}
@@ -139,11 +143,11 @@ func (r *runner) dispatch(ctx context.Context, msg *pulsev1.Job, send sendFunc, 
 	// Try to take a slot without waiting. A full pool is not an error — it is
 	// the signal that another agent should take this job.
 	if !r.gate.tryAcquire() {
-		ack(false, pulse.AckBusy)
+		ack(false, pulse.AckBusy, "")
 		return
 	}
 
-	ack(true, "")
+	ack(true, "", "")
 	r.inflight.Add(1)
 	r.running.Add(1)
 	r.metrics.Set(pulse.MetricRunningJobs, float64(r.running.Load()))
@@ -168,6 +172,9 @@ func (r *runner) dispatch(ctx context.Context, msg *pulsev1.Job, send sendFunc, 
 		// its lease is dispatched a second time — waste for a probe, corruption
 		// for a write.
 		stopRenew := r.renewLease(jobCtx, job.ID, send)
+		stdout := newProgressWriter(job.ID, pulse.StreamStdout, progressBudget, send, r.log)
+		stderr := newProgressWriter(job.ID, pulse.StreamStderr, progressBudget, send, r.log)
+		jobCtx = pulse.ContextWithStreams(jobCtx, pulse.Streams{Stdout: stdout, Stderr: stderr})
 		res := r.execute(jobCtx, job, exec)
 		stopRenew()
 		r.metrics.Inc(pulse.MetricJobsExecuted)
@@ -347,6 +354,25 @@ func (r *runner) renewLease(ctx context.Context, jobID string, send sendFunc) (s
 		}
 	}()
 	return cancel
+}
+
+// progressBudget is how much of one stream is forwarded. Past it the writer
+// drops bytes and remembers that it did.
+const progressBudget = 256 << 10
+
+func (r *runner) lookup(kind string) (Executor, bool) {
+	m := r.executors.Load()
+	if m == nil {
+		return nil, false
+	}
+	e, ok := (*m)[kind]
+	return e, ok
+}
+
+// setExecutors replaces the kind map. A tightening push calls this so the
+// next job sees the narrower set; a job already running keeps its executor.
+func (r *runner) setExecutors(e Executors) {
+	r.executors.Store(&e)
 }
 
 // progressWriter turns an executor's output stream into JobProgress messages.

@@ -86,10 +86,10 @@ const (
 
 ## 验收标准
 
-- [ ] 批次按序派发，每批等完成（含重试耗尽）再过闸门
-- [ ] `Gate` 返回 `GateHalt` → 停止后续批次，已完成的不动，有测试
-- [ ] `MaxFailureRate` 超限 → 停，不调用 Gate，有测试
-- [ ] 一个永远返回 `GateContinue` 的 Gate 仍然被 `MaxFailureRate` 兜住，有测试
-- [ ] `SettleFor` 在 Gate 之前生效
-- [ ] 熔断后的状态可查询：做了哪些、没做哪些、为什么停
-- [ ] 框架不尝试任何自动撤销
+- [x] 批次按序派发，每批等完成（含重试耗尽）再过闸门
+- [x] `Gate` 返回 `GateHalt` → 停止后续批次，已完成的不动，有测试
+- [x] `MaxFailureRate` 超限 → 停，不调用 Gate，有测试
+- [x] 一个永远返回 `GateContinue` 的 Gate 仍然被 `MaxFailureRate` 兜住，有测试
+- [x] `SettleFor` 在 Gate 之前生效
+- [x] 熔断后的状态可查询：做了哪些、没做哪些、为什么停
+- [x] 框架不尝试任何自动撤销

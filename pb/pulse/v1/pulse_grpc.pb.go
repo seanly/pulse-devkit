@@ -34,6 +34,7 @@ const (
 	AgentService_Register_FullMethodName     = "/pulse.v1.AgentService/Register"
 	AgentService_Connect_FullMethodName      = "/pulse.v1.AgentService/Connect"
 	AgentService_ReportResult_FullMethodName = "/pulse.v1.AgentService/ReportResult"
+	AgentService_FetchBlob_FullMethodName    = "/pulse.v1.AgentService/FetchBlob"
 )
 
 // AgentServiceClient is the client API for AgentService service.
@@ -52,6 +53,13 @@ type AgentServiceClient interface {
 	// ReportResult delivers one finished job. Idempotent per job_id: the server
 	// keeps the first result and ignores replays.
 	ReportResult(ctx context.Context, in *ReportResultRequest, opts ...grpc.CallOption) (*ReportResultResponse, error)
+	// FetchBlob streams large content the server referenced from a job payload.
+	//
+	// Content-addressed rather than inlined for two reasons: a payload cannot
+	// exceed gRPC's message limit (4MB by default), and a thousand agents
+	// fetching the same bundle can cache it by digest, so only the first one
+	// actually transfers it.
+	FetchBlob(ctx context.Context, in *FetchBlobRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BlobChunk], error)
 }
 
 type agentServiceClient struct {
@@ -95,6 +103,25 @@ func (c *agentServiceClient) ReportResult(ctx context.Context, in *ReportResultR
 	return out, nil
 }
 
+func (c *agentServiceClient) FetchBlob(ctx context.Context, in *FetchBlobRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BlobChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &AgentService_ServiceDesc.Streams[1], AgentService_FetchBlob_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FetchBlobRequest, BlobChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AgentService_FetchBlobClient = grpc.ServerStreamingClient[BlobChunk]
+
 // AgentServiceServer is the server API for AgentService service.
 // All implementations must embed UnimplementedAgentServiceServer
 // for forward compatibility.
@@ -111,6 +138,13 @@ type AgentServiceServer interface {
 	// ReportResult delivers one finished job. Idempotent per job_id: the server
 	// keeps the first result and ignores replays.
 	ReportResult(context.Context, *ReportResultRequest) (*ReportResultResponse, error)
+	// FetchBlob streams large content the server referenced from a job payload.
+	//
+	// Content-addressed rather than inlined for two reasons: a payload cannot
+	// exceed gRPC's message limit (4MB by default), and a thousand agents
+	// fetching the same bundle can cache it by digest, so only the first one
+	// actually transfers it.
+	FetchBlob(*FetchBlobRequest, grpc.ServerStreamingServer[BlobChunk]) error
 	mustEmbedUnimplementedAgentServiceServer()
 }
 
@@ -129,6 +163,9 @@ func (UnimplementedAgentServiceServer) Connect(grpc.BidiStreamingServer[AgentMes
 }
 func (UnimplementedAgentServiceServer) ReportResult(context.Context, *ReportResultRequest) (*ReportResultResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportResult not implemented")
+}
+func (UnimplementedAgentServiceServer) FetchBlob(*FetchBlobRequest, grpc.ServerStreamingServer[BlobChunk]) error {
+	return status.Error(codes.Unimplemented, "method FetchBlob not implemented")
 }
 func (UnimplementedAgentServiceServer) mustEmbedUnimplementedAgentServiceServer() {}
 func (UnimplementedAgentServiceServer) testEmbeddedByValue()                      {}
@@ -194,6 +231,17 @@ func _AgentService_ReportResult_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_FetchBlob_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FetchBlobRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AgentServiceServer).FetchBlob(m, &grpc.GenericServerStream[FetchBlobRequest, BlobChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AgentService_FetchBlobServer = grpc.ServerStreamingServer[BlobChunk]
+
 // AgentService_ServiceDesc is the grpc.ServiceDesc for AgentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -216,6 +264,11 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 			Handler:       _AgentService_Connect_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "FetchBlob",
+			Handler:       _AgentService_FetchBlob_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "pulse/v1/pulse.proto",

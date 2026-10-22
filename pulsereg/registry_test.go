@@ -43,8 +43,7 @@ func TestReconnectReplacesStreamAndOldDetachIsHarmless(t *testing.T) {
 	// agent undispatchable.
 	detachFirst()
 
-	cmd := pulse.CommandReload
-	if err := svc.SendTo(id, &pulse.ServerMessage{Command: &cmd}); err != nil {
+	if err := svc.SendTo(id, &pulse.ServerMessage{Command: pulse.Reload()}); err != nil {
 		t.Fatalf("SendTo after reconnect: %v", err)
 	}
 	if len(secondGot) != 1 {
@@ -61,8 +60,7 @@ func TestSendToWithoutStreamFails(t *testing.T) {
 
 	// An offline agent must fail the push, so the dispatcher requeues the work
 	// rather than believing it was delivered.
-	cmd := pulse.CommandReload
-	if err := svc.SendTo(id, &pulse.ServerMessage{Command: &cmd}); err == nil {
+	if err := svc.SendTo(id, &pulse.ServerMessage{Command: pulse.Reload()}); err == nil {
 		t.Error("want an error when the agent has no live stream")
 	}
 }
@@ -273,8 +271,7 @@ func TestSendToTranslatesEachMessageKind(t *testing.T) {
 	if err := svc.SendTo(id, &pulse.ServerMessage{Job: &job}); err != nil {
 		t.Fatal(err)
 	}
-	cmd := pulse.CommandShutdown
-	if err := svc.SendTo(id, &pulse.ServerMessage{Command: &cmd}); err != nil {
+	if err := svc.SendTo(id, &pulse.ServerMessage{Command: pulse.Shutdown()}); err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 2 {
@@ -331,8 +328,7 @@ func TestSendErrorPropagates(t *testing.T) {
 	want := errors.New("stream is gone")
 	svc.Attach(id, func(*pulsev1.ServerMessage) error { return want })
 
-	cmd := pulse.CommandReload
-	err := svc.SendTo(id, &pulse.ServerMessage{Command: &cmd})
+	err := svc.SendTo(id, &pulse.ServerMessage{Command: pulse.Reload()})
 	// The dispatcher branches on this to requeue, so it must not be swallowed.
 	if !errors.Is(err, want) {
 		t.Errorf("error = %v, want the stream's error", err)

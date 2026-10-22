@@ -175,6 +175,13 @@ func (a *Agent) command(cmd *pulsev1.Command) {
 	case pulsev1.Command_KIND_SHUTDOWN:
 		a.log.Info("shutdown requested by server")
 		a.stop()
+	case pulsev1.Command_KIND_CANCEL:
+		// The runner owns the running jobs, and is nil between sessions. A
+		// cancel for a job that is no longer running is a no-op, which is the
+		// right answer when a cancel and a report crossed paths.
+		if run := a.run.Load(); run != nil {
+			run.cancel(cmd.GetJobId())
+		}
 	default:
 		a.log.Warn("unknown command; ignoring", "kind", cmd.GetKind())
 	}

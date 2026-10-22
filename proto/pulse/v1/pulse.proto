@@ -29,6 +29,25 @@ service AgentService {
   // ReportResult delivers one finished job. Idempotent per job_id: the server
   // keeps the first result and ignores replays.
   rpc ReportResult(ReportResultRequest) returns (ReportResultResponse);
+
+  // FetchBlob streams large content the server referenced from a job payload.
+  //
+  // Content-addressed rather than inlined for two reasons: a payload cannot
+  // exceed gRPC's message limit (4MB by default), and a thousand agents
+  // fetching the same bundle can cache it by digest, so only the first one
+  // actually transfers it.
+  rpc FetchBlob(FetchBlobRequest) returns (stream BlobChunk);
+}
+
+message FetchBlobRequest {
+  // digest is "sha256:<hex>". The agent MUST verify that what it received
+  // hashes to this value — that check is the whole of content addressing's
+  // safety, and without it a blob is just an unauthenticated download.
+  string digest = 1;
+}
+
+message BlobChunk {
+  bytes chunk = 1;
 }
 
 message RegisterRequest {
@@ -81,7 +100,43 @@ message AgentMessage {
   oneof payload {
     Heartbeat heartbeat = 1;
     JobAck job_ack = 2;
+    JobProgress progress = 3;
+    JobLease lease = 4;
   }
+}
+
+// JobProgress is incremental output from a job that is still running.
+//
+// Work that takes minutes is useless to watch if its output only arrives at
+// the end: an operator wants to see the playbook walking down the host list,
+// not a spinner.
+message JobProgress {
+  string job_id = 1;
+  // seq starts at 1 and increases by one per message for this job. The server
+  // uses it to detect gaps and reordering — a log with a missing middle is
+  // more dangerous than one that is visibly truncated, because it reads as
+  // complete.
+  uint64 seq = 2;
+  // stream is "stdout" or "stderr", kept apart rather than interleaved.
+  // Merging them is irreversible, and "was this line an error or normal
+  // output" is often the first question asked of a failed run.
+  string stream = 3;
+  bytes chunk = 4;
+}
+
+// JobLease says "I am still working on this", and the server extends the
+// lease.
+//
+// Deliberately not folded into Heartbeat: a heartbeat is about the agent, a
+// lease is about one job, and an agent may be running a long job alongside
+// several short ones. A stopped heartbeat means the agent died; a job that
+// stops renewing means that job died while the rest carry on.
+//
+// Without this, a lease expires while the work is still running and the job is
+// dispatched a second time — which for a probe is waste and for a write is
+// corruption.
+message JobLease {
+  string job_id = 1;
 }
 
 // Heartbeat is sent every HeartbeatInterval. The server decides online/offline
@@ -177,8 +232,16 @@ message Command {
     KIND_RELOAD = 1;
     // shutdown asks the agent to finish running jobs and exit.
     KIND_SHUTDOWN = 2;
+    // cancel abandons one running job, named by job_id.
+    //
+    // An agent that does not know this kind falls through its switch, logs a
+    // line and carries on — the job then runs to completion, which is the
+    // pre-cancel behaviour rather than a failure.
+    KIND_CANCEL = 3;
   }
   Kind kind = 1;
+  // job_id is meaningful only for KIND_CANCEL.
+  string job_id = 2;
 }
 
 message ReportResultRequest {

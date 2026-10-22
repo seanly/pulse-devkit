@@ -111,6 +111,27 @@ func (g *GRPCServer) Connect(stream pulsev1.AgentService_ConnectServer) error {
 				// slow sink here would get the agent declared offline.
 				g.svc.sink.Ack(agent.ID, ack.GetJobId(), ack.GetAccepted(), ack.GetReason())
 			}
+		case *pulsev1.AgentMessage_Lease:
+			// Lease renewal for a long-running job. Extending it here is what
+			// keeps a job that outlives its original lease from being
+			// dispatched a second time.
+			if err := g.svc.RenewLease(ctx, agent.ID, payload.Lease.GetJobId()); err != nil {
+				g.svc.log.Warn("lease renewal",
+					"agent_id", agent.ID, "job_id", payload.Lease.GetJobId(), "error", err)
+			}
+		case *pulsev1.AgentMessage_Progress:
+			if g.svc.sink != nil {
+				p := payload.Progress
+				// Under far more pressure than Ack: a chatty job sends these
+				// continuously. Same rule, more urgently — the sink must not
+				// block this loop.
+				g.svc.sink.Progress(agent.ID, pulse.ProgressChunk{
+					JobID:  p.GetJobId(),
+					Seq:    p.GetSeq(),
+					Stream: p.GetStream(),
+					Chunk:  p.GetChunk(),
+				})
+			}
 		default:
 			// An agent newer than this server: say so and carry on.
 			g.svc.log.Warn("unknown agent message; ignoring", "agent_id", agent.ID)

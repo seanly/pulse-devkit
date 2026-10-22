@@ -111,6 +111,28 @@ func (s *Store) LeaseOne(_ context.Context, id string, leaseFor time.Duration) (
 	return *j, nil
 }
 
+// RenewLease extends a leased job's deadline.
+func (s *Store) RenewLease(_ context.Context, id, agentID string, leaseFor time.Duration) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.taken(); err != nil {
+		return err
+	}
+	j, ok := s.jobs[id]
+	if !ok {
+		return fmt.Errorf("job %s: %w", id, pulse.ErrNotFound)
+	}
+	// Both conditions matter. Leased, because renewing a finished job would
+	// resurrect it; and this agent's, because a stale renewal from an agent
+	// whose lease was already reclaimed would otherwise extend a lease now
+	// held by someone else.
+	if j.Status != pulse.JobLeased || j.AgentID != agentID {
+		return fmt.Errorf("job %s is not leased to %s: %w", id, agentID, pulse.ErrNotFound)
+	}
+	j.LeaseExpiresAt = s.now().Add(leaseFor)
+	return nil
+}
+
 func (s *Store) Complete(_ context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

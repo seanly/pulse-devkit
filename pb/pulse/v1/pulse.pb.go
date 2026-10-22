@@ -41,6 +41,12 @@ const (
 	Command_KIND_RELOAD Command_Kind = 1
 	// shutdown asks the agent to finish running jobs and exit.
 	Command_KIND_SHUTDOWN Command_Kind = 2
+	// cancel abandons one running job, named by job_id.
+	//
+	// An agent that does not know this kind falls through its switch, logs a
+	// line and carries on — the job then runs to completion, which is the
+	// pre-cancel behaviour rather than a failure.
+	Command_KIND_CANCEL Command_Kind = 3
 )
 
 // Enum value maps for Command_Kind.
@@ -49,11 +55,13 @@ var (
 		0: "KIND_UNSPECIFIED",
 		1: "KIND_RELOAD",
 		2: "KIND_SHUTDOWN",
+		3: "KIND_CANCEL",
 	}
 	Command_Kind_value = map[string]int32{
 		"KIND_UNSPECIFIED": 0,
 		"KIND_RELOAD":      1,
 		"KIND_SHUTDOWN":    2,
+		"KIND_CANCEL":      3,
 	}
 )
 
@@ -81,7 +89,98 @@ func (x Command_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Command_Kind.Descriptor instead.
 func (Command_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{9, 0}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{13, 0}
+}
+
+type FetchBlobRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// digest is "sha256:<hex>". The agent MUST verify that what it received
+	// hashes to this value — that check is the whole of content addressing's
+	// safety, and without it a blob is just an unauthenticated download.
+	Digest        string `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchBlobRequest) Reset() {
+	*x = FetchBlobRequest{}
+	mi := &file_pulse_v1_pulse_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchBlobRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchBlobRequest) ProtoMessage() {}
+
+func (x *FetchBlobRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pulse_v1_pulse_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchBlobRequest.ProtoReflect.Descriptor instead.
+func (*FetchBlobRequest) Descriptor() ([]byte, []int) {
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FetchBlobRequest) GetDigest() string {
+	if x != nil {
+		return x.Digest
+	}
+	return ""
+}
+
+type BlobChunk struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chunk         []byte                 `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BlobChunk) Reset() {
+	*x = BlobChunk{}
+	mi := &file_pulse_v1_pulse_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlobChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlobChunk) ProtoMessage() {}
+
+func (x *BlobChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_pulse_v1_pulse_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlobChunk.ProtoReflect.Descriptor instead.
+func (*BlobChunk) Descriptor() ([]byte, []int) {
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BlobChunk) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
 }
 
 type RegisterRequest struct {
@@ -109,7 +208,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[0]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -121,7 +220,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[0]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -134,7 +233,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{0}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RegisterRequest) GetBootstrapToken() string {
@@ -198,7 +297,7 @@ type LocalConfig struct {
 
 func (x *LocalConfig) Reset() {
 	*x = LocalConfig{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[1]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +309,7 @@ func (x *LocalConfig) String() string {
 func (*LocalConfig) ProtoMessage() {}
 
 func (x *LocalConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[1]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +322,7 @@ func (x *LocalConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LocalConfig.ProtoReflect.Descriptor instead.
 func (*LocalConfig) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{1}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *LocalConfig) GetConcurrency() int32 {
@@ -278,7 +377,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[2]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -290,7 +389,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[2]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -303,7 +402,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{2}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RegisterResponse) GetAgentId() string {
@@ -333,6 +432,8 @@ type AgentMessage struct {
 	//
 	//	*AgentMessage_Heartbeat
 	//	*AgentMessage_JobAck
+	//	*AgentMessage_Progress
+	//	*AgentMessage_Lease
 	Payload       isAgentMessage_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -340,7 +441,7 @@ type AgentMessage struct {
 
 func (x *AgentMessage) Reset() {
 	*x = AgentMessage{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[3]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -352,7 +453,7 @@ func (x *AgentMessage) String() string {
 func (*AgentMessage) ProtoMessage() {}
 
 func (x *AgentMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[3]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -365,7 +466,7 @@ func (x *AgentMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentMessage.ProtoReflect.Descriptor instead.
 func (*AgentMessage) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{3}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AgentMessage) GetPayload() isAgentMessage_Payload {
@@ -393,6 +494,24 @@ func (x *AgentMessage) GetJobAck() *JobAck {
 	return nil
 }
 
+func (x *AgentMessage) GetProgress() *JobProgress {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentMessage_Progress); ok {
+			return x.Progress
+		}
+	}
+	return nil
+}
+
+func (x *AgentMessage) GetLease() *JobLease {
+	if x != nil {
+		if x, ok := x.Payload.(*AgentMessage_Lease); ok {
+			return x.Lease
+		}
+	}
+	return nil
+}
+
 type isAgentMessage_Payload interface {
 	isAgentMessage_Payload()
 }
@@ -405,9 +524,156 @@ type AgentMessage_JobAck struct {
 	JobAck *JobAck `protobuf:"bytes,2,opt,name=job_ack,json=jobAck,proto3,oneof"`
 }
 
+type AgentMessage_Progress struct {
+	Progress *JobProgress `protobuf:"bytes,3,opt,name=progress,proto3,oneof"`
+}
+
+type AgentMessage_Lease struct {
+	Lease *JobLease `protobuf:"bytes,4,opt,name=lease,proto3,oneof"`
+}
+
 func (*AgentMessage_Heartbeat) isAgentMessage_Payload() {}
 
 func (*AgentMessage_JobAck) isAgentMessage_Payload() {}
+
+func (*AgentMessage_Progress) isAgentMessage_Payload() {}
+
+func (*AgentMessage_Lease) isAgentMessage_Payload() {}
+
+// JobProgress is incremental output from a job that is still running.
+//
+// Work that takes minutes is useless to watch if its output only arrives at
+// the end: an operator wants to see the playbook walking down the host list,
+// not a spinner.
+type JobProgress struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	JobId string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	// seq starts at 1 and increases by one per message for this job. The server
+	// uses it to detect gaps and reordering — a log with a missing middle is more
+	// dangerous than one that is visibly truncated, because it reads as
+	// complete.
+	Seq uint64 `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
+	// stream is "stdout" or "stderr", kept apart rather than interleaved.
+	// Merging them is irreversible, and "was this line an error or normal
+	// output" is often the first question asked of a failed run.
+	Stream        string `protobuf:"bytes,3,opt,name=stream,proto3" json:"stream,omitempty"`
+	Chunk         []byte `protobuf:"bytes,4,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JobProgress) Reset() {
+	*x = JobProgress{}
+	mi := &file_pulse_v1_pulse_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JobProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JobProgress) ProtoMessage() {}
+
+func (x *JobProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_pulse_v1_pulse_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JobProgress.ProtoReflect.Descriptor instead.
+func (*JobProgress) Descriptor() ([]byte, []int) {
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *JobProgress) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *JobProgress) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *JobProgress) GetStream() string {
+	if x != nil {
+		return x.Stream
+	}
+	return ""
+}
+
+func (x *JobProgress) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
+}
+
+// JobLease says "I am still working on this", and the server extends the
+// lease.
+//
+// Deliberately not folded into Heartbeat: a heartbeat is about the agent, a
+// lease is about one job, and an agent may be running a long job alongside
+// several short ones. A stopped heartbeat means the agent died; a job that
+// stops renewing means that job died while the rest carry on.
+//
+// Without this, a lease expires while the work is still running and the job is
+// dispatched a second time — which for a probe is waste and for a write is
+// corruption.
+type JobLease struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JobLease) Reset() {
+	*x = JobLease{}
+	mi := &file_pulse_v1_pulse_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JobLease) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JobLease) ProtoMessage() {}
+
+func (x *JobLease) ProtoReflect() protoreflect.Message {
+	mi := &file_pulse_v1_pulse_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JobLease.ProtoReflect.Descriptor instead.
+func (*JobLease) Descriptor() ([]byte, []int) {
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *JobLease) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
 
 // Heartbeat is sent every HeartbeatInterval. The server decides online/offline
 // from when the last one arrived, not from anything the heartbeat claims.
@@ -428,7 +694,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[4]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -440,7 +706,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[4]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -453,7 +719,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{4}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Heartbeat) GetVersion() string {
@@ -500,7 +766,7 @@ type JobAck struct {
 
 func (x *JobAck) Reset() {
 	*x = JobAck{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[5]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -512,7 +778,7 @@ func (x *JobAck) String() string {
 func (*JobAck) ProtoMessage() {}
 
 func (x *JobAck) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[5]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -525,7 +791,7 @@ func (x *JobAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobAck.ProtoReflect.Descriptor instead.
 func (*JobAck) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{5}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *JobAck) GetJobId() string {
@@ -563,7 +829,7 @@ type ServerMessage struct {
 
 func (x *ServerMessage) Reset() {
 	*x = ServerMessage{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[6]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +841,7 @@ func (x *ServerMessage) String() string {
 func (*ServerMessage) ProtoMessage() {}
 
 func (x *ServerMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[6]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +854,7 @@ func (x *ServerMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerMessage.ProtoReflect.Descriptor instead.
 func (*ServerMessage) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{6}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ServerMessage) GetPayload() isServerMessage_Payload {
@@ -682,7 +948,7 @@ type AgentConfig struct {
 
 func (x *AgentConfig) Reset() {
 	*x = AgentConfig{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[7]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -694,7 +960,7 @@ func (x *AgentConfig) String() string {
 func (*AgentConfig) ProtoMessage() {}
 
 func (x *AgentConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[7]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -707,7 +973,7 @@ func (x *AgentConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentConfig.ProtoReflect.Descriptor instead.
 func (*AgentConfig) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{7}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *AgentConfig) GetVersion() int64 {
@@ -780,7 +1046,7 @@ type Job struct {
 
 func (x *Job) Reset() {
 	*x = Job{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[8]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -792,7 +1058,7 @@ func (x *Job) String() string {
 func (*Job) ProtoMessage() {}
 
 func (x *Job) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[8]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -805,7 +1071,7 @@ func (x *Job) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Job.ProtoReflect.Descriptor instead.
 func (*Job) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{8}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Job) GetJobId() string {
@@ -858,15 +1124,17 @@ func (x *Job) GetPayload() []byte {
 }
 
 type Command struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Kind          Command_Kind           `protobuf:"varint,1,opt,name=kind,proto3,enum=pulse.v1.Command_Kind" json:"kind,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Kind  Command_Kind           `protobuf:"varint,1,opt,name=kind,proto3,enum=pulse.v1.Command_Kind" json:"kind,omitempty"`
+	// job_id is meaningful only for KIND_CANCEL.
+	JobId         string `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Command) Reset() {
 	*x = Command{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[9]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -878,7 +1146,7 @@ func (x *Command) String() string {
 func (*Command) ProtoMessage() {}
 
 func (x *Command) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[9]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -891,7 +1159,7 @@ func (x *Command) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Command.ProtoReflect.Descriptor instead.
 func (*Command) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{9}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Command) GetKind() Command_Kind {
@@ -899,6 +1167,13 @@ func (x *Command) GetKind() Command_Kind {
 		return x.Kind
 	}
 	return Command_KIND_UNSPECIFIED
+}
+
+func (x *Command) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
 }
 
 type ReportResultRequest struct {
@@ -925,7 +1200,7 @@ type ReportResultRequest struct {
 
 func (x *ReportResultRequest) Reset() {
 	*x = ReportResultRequest{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[10]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -937,7 +1212,7 @@ func (x *ReportResultRequest) String() string {
 func (*ReportResultRequest) ProtoMessage() {}
 
 func (x *ReportResultRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[10]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -950,7 +1225,7 @@ func (x *ReportResultRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportResultRequest.ProtoReflect.Descriptor instead.
 func (*ReportResultRequest) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{10}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ReportResultRequest) GetJobId() string {
@@ -1034,7 +1309,7 @@ type ReportResultResponse struct {
 
 func (x *ReportResultResponse) Reset() {
 	*x = ReportResultResponse{}
-	mi := &file_pulse_v1_pulse_proto_msgTypes[11]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1046,7 +1321,7 @@ func (x *ReportResultResponse) String() string {
 func (*ReportResultResponse) ProtoMessage() {}
 
 func (x *ReportResultResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pulse_v1_pulse_proto_msgTypes[11]
+	mi := &file_pulse_v1_pulse_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1059,7 +1334,7 @@ func (x *ReportResultResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportResultResponse.ProtoReflect.Descriptor instead.
 func (*ReportResultResponse) Descriptor() ([]byte, []int) {
-	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{11}
+	return file_pulse_v1_pulse_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ReportResultResponse) GetAccepted() bool {
@@ -1073,7 +1348,11 @@ var File_pulse_v1_pulse_proto protoreflect.FileDescriptor
 
 const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\n" +
-	"\x14pulse/v1/pulse.proto\x12\bpulse.v1\"\xc0\x02\n" +
+	"\x14pulse/v1/pulse.proto\x12\bpulse.v1\"*\n" +
+	"\x10FetchBlobRequest\x12\x16\n" +
+	"\x06digest\x18\x01 \x01(\tR\x06digest\"!\n" +
+	"\tBlobChunk\x12\x14\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk\"\xc0\x02\n" +
 	"\x0fRegisterRequest\x12'\n" +
 	"\x0fbootstrap_token\x18\x01 \x01(\tR\x0ebootstrapToken\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1103,11 +1382,20 @@ const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\x10effective_labels\x18\x03 \x03(\v2/.pulse.v1.RegisterResponse.EffectiveLabelsEntryR\x0feffectiveLabels\x1aB\n" +
 	"\x14EffectiveLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"{\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdc\x01\n" +
 	"\fAgentMessage\x123\n" +
 	"\theartbeat\x18\x01 \x01(\v2\x13.pulse.v1.HeartbeatH\x00R\theartbeat\x12+\n" +
-	"\ajob_ack\x18\x02 \x01(\v2\x10.pulse.v1.JobAckH\x00R\x06jobAckB\t\n" +
-	"\apayload\"\x83\x01\n" +
+	"\ajob_ack\x18\x02 \x01(\v2\x10.pulse.v1.JobAckH\x00R\x06jobAck\x123\n" +
+	"\bprogress\x18\x03 \x01(\v2\x15.pulse.v1.JobProgressH\x00R\bprogress\x12*\n" +
+	"\x05lease\x18\x04 \x01(\v2\x12.pulse.v1.JobLeaseH\x00R\x05leaseB\t\n" +
+	"\apayload\"d\n" +
+	"\vJobProgress\x12\x15\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x10\n" +
+	"\x03seq\x18\x02 \x01(\x04R\x03seq\x12\x16\n" +
+	"\x06stream\x18\x03 \x01(\tR\x06stream\x12\x14\n" +
+	"\x05chunk\x18\x04 \x01(\fR\x05chunk\"!\n" +
+	"\bJobLease\x12\x15\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x83\x01\n" +
 	"\tHeartbeat\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12\x12\n" +
 	"\x04load\x18\x02 \x01(\x01R\x04load\x12!\n" +
@@ -1139,13 +1427,15 @@ const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\n" +
 	"timeout_ms\x18\x05 \x01(\x05R\ttimeoutMs\x12\x18\n" +
 	"\aattempt\x18\x06 \x01(\x05R\aattempt\x12\x18\n" +
-	"\apayload\x18\a \x01(\fR\apayload\"w\n" +
+	"\apayload\x18\a \x01(\fR\apayload\"\x9f\x01\n" +
 	"\aCommand\x12*\n" +
-	"\x04kind\x18\x01 \x01(\x0e2\x16.pulse.v1.Command.KindR\x04kind\"@\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x16.pulse.v1.Command.KindR\x04kind\x12\x15\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\"Q\n" +
 	"\x04Kind\x12\x14\n" +
 	"\x10KIND_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vKIND_RELOAD\x10\x01\x12\x11\n" +
-	"\rKIND_SHUTDOWN\x10\x02\"\xb9\x02\n" +
+	"\rKIND_SHUTDOWN\x10\x02\x12\x0f\n" +
+	"\vKIND_CANCEL\x10\x03\"\xb9\x02\n" +
 	"\x13ReportResultRequest\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x19\n" +
 	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12\x1d\n" +
@@ -1162,11 +1452,12 @@ const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\apayload\x18\n" +
 	" \x01(\fR\apayload\"2\n" +
 	"\x14ReportResultResponse\x12\x1a\n" +
-	"\baccepted\x18\x01 \x01(\bR\baccepted2\xe0\x01\n" +
+	"\baccepted\x18\x01 \x01(\bR\baccepted2\xa0\x02\n" +
 	"\fAgentService\x12A\n" +
 	"\bRegister\x12\x19.pulse.v1.RegisterRequest\x1a\x1a.pulse.v1.RegisterResponse\x12>\n" +
 	"\aConnect\x12\x16.pulse.v1.AgentMessage\x1a\x17.pulse.v1.ServerMessage(\x010\x01\x12M\n" +
-	"\fReportResult\x12\x1d.pulse.v1.ReportResultRequest\x1a\x1e.pulse.v1.ReportResultResponseB4Z2github.com/seanly/pulse-devkit/pb/pulse/v1;pulsev1b\x06proto3"
+	"\fReportResult\x12\x1d.pulse.v1.ReportResultRequest\x1a\x1e.pulse.v1.ReportResultResponse\x12>\n" +
+	"\tFetchBlob\x12\x1a.pulse.v1.FetchBlobRequest\x1a\x13.pulse.v1.BlobChunk0\x01B4Z2github.com/seanly/pulse-devkit/pb/pulse/v1;pulsev1b\x06proto3"
 
 var (
 	file_pulse_v1_pulse_proto_rawDescOnce sync.Once
@@ -1181,47 +1472,55 @@ func file_pulse_v1_pulse_proto_rawDescGZIP() []byte {
 }
 
 var file_pulse_v1_pulse_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_pulse_v1_pulse_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_pulse_v1_pulse_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_pulse_v1_pulse_proto_goTypes = []any{
 	(Command_Kind)(0),            // 0: pulse.v1.Command.Kind
-	(*RegisterRequest)(nil),      // 1: pulse.v1.RegisterRequest
-	(*LocalConfig)(nil),          // 2: pulse.v1.LocalConfig
-	(*RegisterResponse)(nil),     // 3: pulse.v1.RegisterResponse
-	(*AgentMessage)(nil),         // 4: pulse.v1.AgentMessage
-	(*Heartbeat)(nil),            // 5: pulse.v1.Heartbeat
-	(*JobAck)(nil),               // 6: pulse.v1.JobAck
-	(*ServerMessage)(nil),        // 7: pulse.v1.ServerMessage
-	(*AgentConfig)(nil),          // 8: pulse.v1.AgentConfig
-	(*Job)(nil),                  // 9: pulse.v1.Job
-	(*Command)(nil),              // 10: pulse.v1.Command
-	(*ReportResultRequest)(nil),  // 11: pulse.v1.ReportResultRequest
-	(*ReportResultResponse)(nil), // 12: pulse.v1.ReportResultResponse
-	nil,                          // 13: pulse.v1.RegisterRequest.LabelsEntry
-	nil,                          // 14: pulse.v1.LocalConfig.ExtraEntry
-	nil,                          // 15: pulse.v1.RegisterResponse.EffectiveLabelsEntry
+	(*FetchBlobRequest)(nil),     // 1: pulse.v1.FetchBlobRequest
+	(*BlobChunk)(nil),            // 2: pulse.v1.BlobChunk
+	(*RegisterRequest)(nil),      // 3: pulse.v1.RegisterRequest
+	(*LocalConfig)(nil),          // 4: pulse.v1.LocalConfig
+	(*RegisterResponse)(nil),     // 5: pulse.v1.RegisterResponse
+	(*AgentMessage)(nil),         // 6: pulse.v1.AgentMessage
+	(*JobProgress)(nil),          // 7: pulse.v1.JobProgress
+	(*JobLease)(nil),             // 8: pulse.v1.JobLease
+	(*Heartbeat)(nil),            // 9: pulse.v1.Heartbeat
+	(*JobAck)(nil),               // 10: pulse.v1.JobAck
+	(*ServerMessage)(nil),        // 11: pulse.v1.ServerMessage
+	(*AgentConfig)(nil),          // 12: pulse.v1.AgentConfig
+	(*Job)(nil),                  // 13: pulse.v1.Job
+	(*Command)(nil),              // 14: pulse.v1.Command
+	(*ReportResultRequest)(nil),  // 15: pulse.v1.ReportResultRequest
+	(*ReportResultResponse)(nil), // 16: pulse.v1.ReportResultResponse
+	nil,                          // 17: pulse.v1.RegisterRequest.LabelsEntry
+	nil,                          // 18: pulse.v1.LocalConfig.ExtraEntry
+	nil,                          // 19: pulse.v1.RegisterResponse.EffectiveLabelsEntry
 }
 var file_pulse_v1_pulse_proto_depIdxs = []int32{
-	13, // 0: pulse.v1.RegisterRequest.labels:type_name -> pulse.v1.RegisterRequest.LabelsEntry
-	2,  // 1: pulse.v1.RegisterRequest.local_config:type_name -> pulse.v1.LocalConfig
-	14, // 2: pulse.v1.LocalConfig.extra:type_name -> pulse.v1.LocalConfig.ExtraEntry
-	15, // 3: pulse.v1.RegisterResponse.effective_labels:type_name -> pulse.v1.RegisterResponse.EffectiveLabelsEntry
-	5,  // 4: pulse.v1.AgentMessage.heartbeat:type_name -> pulse.v1.Heartbeat
-	6,  // 5: pulse.v1.AgentMessage.job_ack:type_name -> pulse.v1.JobAck
-	9,  // 6: pulse.v1.ServerMessage.job:type_name -> pulse.v1.Job
-	10, // 7: pulse.v1.ServerMessage.command:type_name -> pulse.v1.Command
-	8,  // 8: pulse.v1.ServerMessage.config:type_name -> pulse.v1.AgentConfig
-	0,  // 9: pulse.v1.Command.kind:type_name -> pulse.v1.Command.Kind
-	1,  // 10: pulse.v1.AgentService.Register:input_type -> pulse.v1.RegisterRequest
-	4,  // 11: pulse.v1.AgentService.Connect:input_type -> pulse.v1.AgentMessage
-	11, // 12: pulse.v1.AgentService.ReportResult:input_type -> pulse.v1.ReportResultRequest
-	3,  // 13: pulse.v1.AgentService.Register:output_type -> pulse.v1.RegisterResponse
-	7,  // 14: pulse.v1.AgentService.Connect:output_type -> pulse.v1.ServerMessage
-	12, // 15: pulse.v1.AgentService.ReportResult:output_type -> pulse.v1.ReportResultResponse
-	13, // [13:16] is the sub-list for method output_type
-	10, // [10:13] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	17, // 0: pulse.v1.RegisterRequest.labels:type_name -> pulse.v1.RegisterRequest.LabelsEntry
+	4,  // 1: pulse.v1.RegisterRequest.local_config:type_name -> pulse.v1.LocalConfig
+	18, // 2: pulse.v1.LocalConfig.extra:type_name -> pulse.v1.LocalConfig.ExtraEntry
+	19, // 3: pulse.v1.RegisterResponse.effective_labels:type_name -> pulse.v1.RegisterResponse.EffectiveLabelsEntry
+	9,  // 4: pulse.v1.AgentMessage.heartbeat:type_name -> pulse.v1.Heartbeat
+	10, // 5: pulse.v1.AgentMessage.job_ack:type_name -> pulse.v1.JobAck
+	7,  // 6: pulse.v1.AgentMessage.progress:type_name -> pulse.v1.JobProgress
+	8,  // 7: pulse.v1.AgentMessage.lease:type_name -> pulse.v1.JobLease
+	13, // 8: pulse.v1.ServerMessage.job:type_name -> pulse.v1.Job
+	14, // 9: pulse.v1.ServerMessage.command:type_name -> pulse.v1.Command
+	12, // 10: pulse.v1.ServerMessage.config:type_name -> pulse.v1.AgentConfig
+	0,  // 11: pulse.v1.Command.kind:type_name -> pulse.v1.Command.Kind
+	3,  // 12: pulse.v1.AgentService.Register:input_type -> pulse.v1.RegisterRequest
+	6,  // 13: pulse.v1.AgentService.Connect:input_type -> pulse.v1.AgentMessage
+	15, // 14: pulse.v1.AgentService.ReportResult:input_type -> pulse.v1.ReportResultRequest
+	1,  // 15: pulse.v1.AgentService.FetchBlob:input_type -> pulse.v1.FetchBlobRequest
+	5,  // 16: pulse.v1.AgentService.Register:output_type -> pulse.v1.RegisterResponse
+	11, // 17: pulse.v1.AgentService.Connect:output_type -> pulse.v1.ServerMessage
+	16, // 18: pulse.v1.AgentService.ReportResult:output_type -> pulse.v1.ReportResultResponse
+	2,  // 19: pulse.v1.AgentService.FetchBlob:output_type -> pulse.v1.BlobChunk
+	16, // [16:20] is the sub-list for method output_type
+	12, // [12:16] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_pulse_v1_pulse_proto_init() }
@@ -1229,11 +1528,13 @@ func file_pulse_v1_pulse_proto_init() {
 	if File_pulse_v1_pulse_proto != nil {
 		return
 	}
-	file_pulse_v1_pulse_proto_msgTypes[3].OneofWrappers = []any{
+	file_pulse_v1_pulse_proto_msgTypes[5].OneofWrappers = []any{
 		(*AgentMessage_Heartbeat)(nil),
 		(*AgentMessage_JobAck)(nil),
+		(*AgentMessage_Progress)(nil),
+		(*AgentMessage_Lease)(nil),
 	}
-	file_pulse_v1_pulse_proto_msgTypes[6].OneofWrappers = []any{
+	file_pulse_v1_pulse_proto_msgTypes[10].OneofWrappers = []any{
 		(*ServerMessage_Job)(nil),
 		(*ServerMessage_Command)(nil),
 		(*ServerMessage_Config)(nil),
@@ -1244,7 +1545,7 @@ func file_pulse_v1_pulse_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_pulse_v1_pulse_proto_rawDesc), len(file_pulse_v1_pulse_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -10,8 +10,10 @@ import (
 )
 
 func testJobRoundTrip(t *testing.T, s Stores) {
+	// The sample kind is the one primitive a single-kind store with no kind
+	// column can echo. A store that persists kind must return this same string.
 	want := &pulse.Job{
-		ID: "j1", GroupID: "g1", SubjectID: "s1", Kind: "tlsprobe", AgentID: "a1",
+		ID: "j1", GroupID: "g1", SubjectID: "s1", Kind: pulse.KindNetTLSProbe, AgentID: "a1",
 		Timeout: 20 * time.Second, MaxAttempts: 3,
 		Payload: []byte(`{"host":"example.com","port":443}`),
 	}
@@ -21,7 +23,7 @@ func testJobRoundTrip(t *testing.T, s Stores) {
 	if err != nil {
 		t.Fatalf("GetJob: %v", err)
 	}
-	if got.GroupID != "g1" || got.SubjectID != "s1" || got.Kind != "tlsprobe" {
+	if got.GroupID != "g1" || got.SubjectID != "s1" || got.Kind != pulse.KindNetTLSProbe {
 		t.Errorf("correlation fields did not round trip: %+v", got)
 	}
 	if got.Timeout != 20*time.Second {

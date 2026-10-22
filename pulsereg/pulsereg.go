@@ -30,6 +30,14 @@ type Options struct {
 	Agents  pulse.AgentStore
 	Tokens  pulse.TokenStore
 	Configs pulse.ConfigStore
+	// Jobs is needed only for lease renewal: an agent asks to extend a lease,
+	// and the deadline lives on the job row. Nil disables renewal, which is
+	// right for a deployment that uses the registry without the queue — and
+	// means long jobs there are limited to one lease period.
+	Jobs pulse.JobStore
+	// LeaseFor is how long one renewal extends a lease. Zero means
+	// DefaultLeaseFor.
+	LeaseFor time.Duration
 	// MasterKey is the deployment's master key; the credential signing key is
 	// derived from it, so rotating it invalidates every agent credential.
 	MasterKey []byte
@@ -52,12 +60,15 @@ type Service struct {
 	agents  pulse.AgentStore
 	tokens  pulse.TokenStore
 	configs pulse.ConfigStore
-	sink    pulse.Sink
-	signer  *signer
-	log     *slog.Logger
-	metrics pulse.Metrics
-	clock   pulse.Clock
-	newID   func() string
+	jobs    pulse.JobStore
+	// leaseFor is how long a renewal extends a lease.
+	leaseFor time.Duration
+	sink     pulse.Sink
+	signer   *signer
+	log      *slog.Logger
+	metrics  pulse.Metrics
+	clock    pulse.Clock
+	newID    func() string
 
 	registry streamRegistry
 }
@@ -86,16 +97,22 @@ func New(o Options) (*Service, error) {
 	if o.NewID == nil {
 		o.NewID = randomID
 	}
+	leaseFor := o.LeaseFor
+	if leaseFor <= 0 {
+		leaseFor = DefaultLeaseFor
+	}
 	return &Service{
-		agents:  o.Agents,
-		tokens:  o.Tokens,
-		configs: o.Configs,
-		sink:    o.Sink,
-		signer:  sg,
-		log:     o.Logger,
-		metrics: o.Metrics,
-		clock:   o.Clock,
-		newID:   o.NewID,
+		agents:   o.Agents,
+		tokens:   o.Tokens,
+		configs:  o.Configs,
+		jobs:     o.Jobs,
+		leaseFor: leaseFor,
+		sink:     o.Sink,
+		signer:   sg,
+		log:      o.Logger,
+		metrics:  o.Metrics,
+		clock:    o.Clock,
+		newID:    o.NewID,
 	}, nil
 }
 
@@ -314,3 +331,12 @@ func mergeLabels(layers ...map[string]string) map[string]string {
 	}
 	return out
 }
+
+// DefaultLeaseFor is how long one renewal extends a lease when Options.LeaseFor
+// is unset.
+//
+// Generous on purpose: a renewal is cheap and a prematurely expired lease is
+// expensive — it means the same job runs twice. An agent renews every heartbeat
+// interval, so several renewals have to go missing in a row before this runs
+// out.
+const DefaultLeaseFor = 5 * time.Minute

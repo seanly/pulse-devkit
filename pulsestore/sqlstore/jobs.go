@@ -198,6 +198,25 @@ func (s *Store) LeaseOne(ctx context.Context, id string, leaseFor time.Duration)
 	return j, nil
 }
 
+// RenewLease extends a leased job's deadline, for work that takes longer than
+// one lease period.
+//
+// The agent_id in the predicate is not ceremony: a renewal that arrives from
+// an agent whose lease was already reclaimed must not extend a lease the
+// reaper has since handed to somebody else. Matching on both means such a
+// renewal affects no rows and the caller reads ErrNotFound as "too late".
+func (s *Store) RenewLease(ctx context.Context, id, agentID string, leaseFor time.Duration) error {
+	err := s.execOne(ctx, `
+		UPDATE `+s.table("jobs")+`
+		   SET lease_expires_at = ?
+		 WHERE id = ? AND agent_id = ? AND status = ?`,
+		s.now().Add(leaseFor), id, agentID, pulse.JobLeased)
+	if err != nil && !errors.Is(err, pulse.ErrNotFound) {
+		return fmt.Errorf("sqlstore: renew lease: %w", err)
+	}
+	return err
+}
+
 // Complete marks a leased job done.
 //
 // The status filter means a report arriving after the lease was reclaimed does

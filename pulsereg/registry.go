@@ -66,7 +66,10 @@ func serverMessageToProto(msg *pulse.ServerMessage) (*pulsev1.ServerMessage, err
 		}}, nil
 	case msg.Command != nil:
 		return &pulsev1.ServerMessage{Payload: &pulsev1.ServerMessage_Command{
-			Command: &pulsev1.Command{Kind: pulsev1.Command_Kind(*msg.Command)},
+			Command: &pulsev1.Command{
+				Kind:  pulsev1.Command_Kind(msg.Command.Kind),
+				JobId: msg.Command.JobID,
+			},
 		}}, nil
 	default:
 		return nil, errors.New("pulsereg: empty server message")
@@ -99,9 +102,11 @@ func (s *Service) PushConfig(ctx context.Context, agentID string) (delivered boo
 	return true, nil
 }
 
-// SendCommand asks an agent to reload or shut down.
-func (s *Service) SendCommand(agentID string, cmd pulse.Command) error {
-	return s.SendTo(agentID, &pulse.ServerMessage{Command: &cmd})
+// SendCommand asks an agent to reload, shut down, or cancel one job.
+//
+// Build the command with pulse.Reload, pulse.Shutdown or pulse.Cancel.
+func (s *Service) SendCommand(agentID string, cmd *pulse.Command) error {
+	return s.SendTo(agentID, &pulse.ServerMessage{Command: cmd})
 }
 
 // Attach registers the send side of a live stream and returns a detach func.
@@ -229,4 +234,31 @@ func (r *streamRegistry) count() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return len(r.streams)
+}
+
+// RenewLease extends a leased job's deadline at the agent's request.
+//
+// The agent sends these while a long job runs; without them a job that takes
+// longer than one lease period is reclaimed and dispatched again — waste for a
+// probe, corruption for a write.
+//
+// ErrNotFound means the lease is already gone (the reaper got there first), and
+// the agent is told nothing: it will find out when its report is not accepted.
+// There is nothing useful it could do with the information mid-job anyway.
+func (s *Service) RenewLease(ctx context.Context, agentID, jobID string) error {
+	if s.jobs == nil {
+		// No job store wired: a deployment that uses the registry without the
+		// queue. Renewal is meaningless rather than an error.
+		return nil
+	}
+	if jobID == "" {
+		return errors.New("pulsereg: lease renewal without a job id")
+	}
+	err := s.jobs.RenewLease(ctx, jobID, agentID, s.leaseFor)
+	if errors.Is(err, pulse.ErrNotFound) {
+		s.log.Debug("lease renewal for a job no longer leased here",
+			"agent_id", agentID, "job_id", jobID)
+		return nil
+	}
+	return err
 }

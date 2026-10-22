@@ -156,6 +156,18 @@ type JobStore interface {
 	// Implementations must not clamp it; it is how a test produces an expired
 	// lease without a controllable clock.
 	LeaseOne(ctx context.Context, id string, leaseFor time.Duration) (Job, error)
+	// RenewLease pushes a leased job's deadline out, for work that takes
+	// longer than one lease period.
+	//
+	// It must match on the job being leased AND on agentID owning it. The
+	// agent ID check is not ceremony: without it a stale renewal from an agent
+	// whose lease was already reclaimed would extend a lease now held by
+	// somebody else, and the first agent's eventual report would land on work
+	// the second one is doing.
+	//
+	// ErrNotFound when the job is not leased to that agent — the caller treats
+	// it as "too late", because by then the reaper has already moved on.
+	RenewLease(ctx context.Context, id, agentID string, leaseFor time.Duration) error
 
 	// Complete marks a leased job done. It must match on status = leased, so a
 	// report arriving after the lease was reclaimed does not resurrect a job
@@ -242,14 +254,41 @@ type ServerMessage struct {
 }
 
 // Command is an instruction to an agent.
-type Command int
+//
+// A struct rather than a bare kind because cancel names a job. Reload and
+// shutdown are about the agent; cancel is about one piece of its work.
+type Command struct {
+	Kind CommandKind
+	// JobID is meaningful only for CommandCancel.
+	JobID string
+}
+
+// CommandKind enumerates the instructions.
+type CommandKind int
 
 const (
 	// CommandReload asks the agent to re-read its local configuration.
-	CommandReload Command = 1
+	CommandReload CommandKind = 1
 	// CommandShutdown asks the agent to finish running jobs and exit.
-	CommandShutdown Command = 2
+	CommandShutdown CommandKind = 2
+	// CommandCancel abandons one running job.
+	//
+	// An agent too old to know it logs a line and carries on, so the job runs
+	// to completion — the behaviour from before cancel existed, rather than a
+	// failure.
+	CommandCancel CommandKind = 3
 )
+
+// Reload returns a reload command.
+func Reload() *Command { return &Command{Kind: CommandReload} }
+
+// Shutdown returns a shutdown command.
+func Shutdown() *Command { return &Command{Kind: CommandShutdown} }
+
+// Cancel returns a cancel command for one job.
+func Cancel(jobID string) *Command {
+	return &Command{Kind: CommandCancel, JobID: jobID}
+}
 
 // Sink receives finished work. The application implements it: the framework
 // knows a result arrived, the application knows what it means.
@@ -265,4 +304,26 @@ type Sink interface {
 	// Ack reacts to an agent's accept/reject of a dispatched job. Reasons are
 	// the Ack* constants.
 	Ack(agentID string, jobID string, accepted bool, reason string)
+	// Progress receives incremental output from a running job.
+	//
+	// Called from the receive loop like Ack, and under far more pressure: a
+	// chatty job produces these continuously for minutes. An implementation
+	// that writes each chunk to a database synchronously will stall that
+	// agent's heartbeats and get it declared offline — buffer, or hand off.
+	//
+	// Chunks may arrive out of order or with gaps after a reconnect. Seq is
+	// what makes that detectable; an implementation that ignores it will
+	// silently assemble a log with a hole in it.
+	Progress(agentID string, p ProgressChunk)
+}
+
+// ProgressChunk is incremental output from a job that is still running.
+type ProgressChunk struct {
+	JobID string
+	// Seq starts at 1 per job and increases by one.
+	Seq uint64
+	// Stream is StreamStdout or StreamStderr, kept apart because merging them
+	// cannot be undone.
+	Stream string
+	Chunk  []byte
 }

@@ -70,6 +70,10 @@ func (s *sink) Ack(agentID, jobID string, accepted bool, reason string) {
 	s.queue.Ack(agentID, jobID, accepted, reason)
 }
 
+// Progress is required by the sink. This test's jobs finish in one result,
+// so incremental output has nowhere to go and must not block the stream.
+func (s *sink) Progress(string, pulse.ProgressChunk) {}
+
 func (s *sink) collected() []pulse.Result {
 	s.mu.Lock()
 	defer s.mu.Unlock()

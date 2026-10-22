@@ -44,6 +44,29 @@ type runner struct {
 	// drained flips once drain starts, so a job arriving during shutdown is
 	// declined rather than accepted into a pool that is closing.
 	drained atomic.Bool
+
+	// leaseRenewEvery is how often a running job renews its lease.
+	leaseRenewEvery time.Duration
+
+	// cancels holds one cancel func per running job, so a KIND_CANCEL can
+	// reach exactly the job it names and leave the others alone.
+	cancels sync.Map // job ID -> context.CancelFunc
+}
+
+// cancel abandons one running job. A job that is not running is a no-op: a
+// cancel can cross paths with the job's own completion, and that race has an
+// obvious right answer.
+func (r *runner) cancel(jobID string) {
+	if jobID == "" {
+		return
+	}
+	stop, ok := r.cancels.Load(jobID)
+	if !ok {
+		r.log.Debug("cancel for a job that is not running", "job_id", jobID)
+		return
+	}
+	r.log.Info("cancelling job", "job_id", jobID)
+	stop.(context.CancelFunc)()
 }
 
 func newRunner(o *Options, lim Limits, admit func(pulse.Job) error) *runner {
@@ -55,7 +78,8 @@ func newRunner(o *Options, lim Limits, admit func(pulse.Job) error) *runner {
 		admit:     admit,
 		// Burst equals the limit: a burst of 1 would serialise jobs that the
 		// concurrency gate has already agreed to run in parallel.
-		qps: rate.NewLimiter(rate.Limit(lim.QPS), lim.QPS),
+		qps:             rate.NewLimiter(rate.Limit(lim.QPS), lim.QPS),
+		leaseRenewEvery: o.HeartbeatInterval,
 	}
 	r.timeout.Store(int64(lim.Timeout))
 	r.gate.setLimit(lim.Concurrency)
@@ -124,14 +148,28 @@ func (r *runner) dispatch(ctx context.Context, msg *pulsev1.Job, send sendFunc, 
 	r.running.Add(1)
 	r.metrics.Set(pulse.MetricRunningJobs, float64(r.running.Load()))
 
+	// A per-job context so a cancel reaches exactly this job. Registered
+	// before the goroutine starts, so a cancel arriving immediately after the
+	// ack still finds it.
+	jobCtx, cancelJob := context.WithCancel(ctx)
+	r.cancels.Store(job.ID, cancelJob)
+
 	go func() {
 		defer func() {
+			cancelJob()
+			r.cancels.Delete(job.ID)
 			r.gate.release()
 			r.running.Add(-1)
 			r.metrics.Set(pulse.MetricRunningJobs, float64(r.running.Load()))
 			r.inflight.Done()
 		}()
-		res := r.execute(ctx, job, exec)
+
+		// Renew the lease while the work runs. Without this a job that outlives
+		// its lease is dispatched a second time — waste for a probe, corruption
+		// for a write.
+		stopRenew := r.renewLease(jobCtx, job.ID, send)
+		res := r.execute(jobCtx, job, exec)
+		stopRenew()
 		r.metrics.Inc(pulse.MetricJobsExecuted)
 		// A detached context: the report must go out even when the session
 		// context is already cancelled by shutdown. The unary RPC outlives the
@@ -278,3 +316,93 @@ func (g *gate) release() {
 	}
 	g.mu.Unlock()
 }
+
+// renewLease sends JobLease for a running job until the returned func is
+// called or ctx ends. The returned func is idempotent.
+//
+// The cadence is a fraction of the lease so that losing one message does not
+// lose the lease: the server grants roughly twice the job timeout, and renewing
+// every heartbeat interval means several renewals have to go missing in a row
+// before anything expires.
+func (r *runner) renewLease(ctx context.Context, jobID string, send sendFunc) (stop func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		ticker := time.NewTicker(r.leaseRenewEvery)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				// A full send queue drops the renewal rather than blocking: this
+				// runs alongside the receive loop, and a stalled send there is
+				// what gets an agent declared offline. One missed renewal is
+				// survivable; a stalled heartbeat is not.
+				if err := send(&pulsev1.AgentMessage{Payload: &pulsev1.AgentMessage_Lease{
+					Lease: &pulsev1.JobLease{JobId: jobID},
+				}}); err != nil {
+					r.log.Debug("lease renewal not sent", "job_id", jobID, "error", err)
+				}
+			}
+		}
+	}()
+	return cancel
+}
+
+// progressWriter turns an executor's output stream into JobProgress messages.
+//
+// Rate-limited on purpose: a runaway process can print tens of megabytes a
+// second, and an agent that forwards all of it becomes a denial of service
+// against its own server. Over the budget it stops forwarding and records that
+// it did — a visibly truncated log is safe to read, a quietly truncated one is
+// not.
+type progressWriter struct {
+	jobID  string
+	stream string
+	send   sendFunc
+	log    *slog.Logger
+
+	seq       atomic.Uint64
+	budget    atomic.Int64 // bytes remaining
+	truncated atomic.Bool
+}
+
+func newProgressWriter(jobID, stream string, budget int64, send sendFunc, log *slog.Logger) *progressWriter {
+	w := &progressWriter{jobID: jobID, stream: stream, send: send, log: log}
+	w.budget.Store(budget)
+	return w
+}
+
+func (w *progressWriter) Write(p []byte) (int, error) {
+	// Always report the full length written: the caller's output is not the
+	// agent's to reject, and a short write would look like a broken pipe to a
+	// process that is behaving normally.
+	if w.budget.Load() <= 0 {
+		w.truncated.Store(true)
+		return len(p), nil
+	}
+	chunk := p
+	if int64(len(chunk)) > w.budget.Load() {
+		chunk = chunk[:w.budget.Load()]
+		w.truncated.Store(true)
+	}
+	w.budget.Add(-int64(len(chunk)))
+
+	// Copy: the caller owns p and may reuse it before the sender goroutine
+	// gets to this message.
+	buf := make([]byte, len(chunk))
+	copy(buf, chunk)
+	if err := w.send(&pulsev1.AgentMessage{Payload: &pulsev1.AgentMessage_Progress{
+		Progress: &pulsev1.JobProgress{
+			JobId: w.jobID, Seq: w.seq.Add(1), Stream: w.stream, Chunk: buf,
+		},
+	}}); err != nil {
+		// Dropped rather than retried, and the gap is detectable server-side
+		// because seq already advanced.
+		w.log.Debug("progress chunk not sent", "job_id", w.jobID, "error", err)
+	}
+	return len(p), nil
+}
+
+// Truncated reports whether any output was dropped.
+func (w *progressWriter) Truncated() bool { return w.truncated.Load() }

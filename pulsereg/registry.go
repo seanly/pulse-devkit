@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulseagent"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulseagent"
 )
 
 // Heartbeat records liveness and what an agent reports about itself. The

@@ -20,8 +20,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // Agent is the runnable agent. Construct with New, start with Run.

@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/seanly/go-pulse/pulseagent/pulseguard"
+	"github.com/seanly/pulse-devkit/pulseagent/pulseguard"
 )
 
 func TestDeniesByCIDR(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsereg"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsereg"
 )
 
 // Store is an in-memory implementation of all four storage ports.

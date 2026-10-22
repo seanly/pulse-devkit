@@ -1,17 +1,17 @@
-# 0015 certpulse 迁移到 go-pulse
+# 0015 certpulse 迁移到 pulse-devkit
 
 **里程碑** M4 · **依赖** 0001–0014
 
 ## 目标
 
-certpulse 改为消费 go-pulse，删掉重复代码。这是验证框架「真的够用」的唯一方式——没有第二个消费者的框架只是一堆猜测。
+certpulse 改为消费 pulse-devkit，删掉重复代码。这是验证框架「真的够用」的唯一方式——没有第二个消费者的框架只是一堆猜测。
 
 ## 前置条件
 
-**go-pulse 必须先上传到 github.com/seanly/go-pulse**。在那之前：
+**pulse-devkit 必须先上传到 github.com/seanly/pulse-devkit**。在那之前：
 
 - 本机开发靠父目录的 `go.work`，能编译能测试
-- `docker build` 会失败（构建上下文里没有 go-pulse 源码）
+- `docker build` 会失败（构建上下文里没有 pulse-devkit 源码）
 - CI 会失败（拉不到模块）
 
 所以这个 issue 分两步：先在工作区里改通（本地可验证），等模块发布后再打开容器与 CI。
@@ -20,11 +20,11 @@ certpulse 改为消费 go-pulse，删掉重复代码。这是验证框架「真�
 
 certpulse 已有 `agents`、`agent_bootstrap_tokens`、`agent_configs`、`probe_jobs`，并且有外键指向它们（`probe_results.job_id`、`probe_jobs.target_id` 等）。
 
-**做法：在 `internal/store` 里写适配器实现 go-pulse 的四个端口，映射到现有列。** 不建新表，不迁数据，外键全部保持。
+**做法：在 `internal/store` 里写适配器实现 pulse-devkit 的四个端口，映射到现有列。** 不建新表，不迁数据，外键全部保持。
 
 ```go
 // internal/store/pulseport.go
-// AgentPort 让 go-pulse 的 pulsereg 读写 certpulse 既有的 agents 表。
+// AgentPort 让 pulse-devkit 的 pulsereg 读写 certpulse 既有的 agents 表。
 func (db *DB) AgentPort() pulse.AgentStore { ... }
 func (db *DB) JobPort() pulse.JobStore { ... }
 ```
@@ -33,7 +33,7 @@ func (db *DB) JobPort() pulse.JobStore { ... }
 
 ## 一次性的凭据失效
 
-go-pulse 自己签凭据（HMAC，不是 JWT，见 issue 0008），格式与 certpulse 现有凭据不兼容。
+pulse-devkit 自己签凭据（HMAC，不是 JWT，见 issue 0008），格式与 certpulse 现有凭据不兼容。
 
 影响：升级后所有 agent 的凭据校验失败 → 返回 `Unauthenticated` → **有 bootstrap_token 的 agent 自动重新注册**，无需人工干预。这正是 certpulse 现有的凭据吊销恢复路径，已经有测试覆盖。
 
@@ -66,8 +66,8 @@ message ProbeResultPayload {
 
 每一步都保持 `make test` 绿：
 
-1. 加 go-pulse 依赖，改 Makefile 的 `GOWORK` 处理（issue 0001）
-2. 写 store 适配器 + 端口契约测试（用 go-pulse 的共享 testsuite）
+1. 加 pulse-devkit 依赖，改 Makefile 的 `GOWORK` 处理（issue 0001）
+2. 写 store 适配器 + 端口契约测试（用 pulse-devkit 的共享 testsuite）
 3. agent 侧：`internal/prober` 改为实现 `pulse.Executor`，`cmd/certpulse-agent` 换成 `pulseagent.New`
 4. 服务端：`internal/agentreg` 换成 `pulsereg`，保留 certpulse 自己的 HTTP 层
 5. 调度：`internal/scheduler` 切成「`pulsequeue` + certpulse 的 task/规则/告警」
@@ -88,7 +88,7 @@ message ProbeResultPayload {
 ## 验收标准
 
 - [ ] `make test` 与 `make race` 全绿
-- [ ] 端口适配器通过 go-pulse 的共享契约测试
+- [ ] 端口适配器通过 pulse-devkit 的共享契约测试
 - [ ] agent 注册、心跳、派发、回报端到端跑通（现有 integration 测试改造后仍绿）
 - [ ] 配置下推与生效回显仍工作
 - [ ] 删掉的代码确实删了，不是留着不用

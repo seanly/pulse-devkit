@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsereg"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsereg"
 )
 
 func (s *Store) tokenColumns() string {

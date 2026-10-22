@@ -3,7 +3,7 @@ package pulseagent
 import (
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
 )
 
 // applyConfig applies a server-pushed AgentConfig to the live session. Fields

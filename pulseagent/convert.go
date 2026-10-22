@@ -6,8 +6,8 @@ package pulseagent
 import (
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 func jobFromProto(m *pulsev1.Job) pulse.Job {

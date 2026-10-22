@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsereg"
-	"github.com/seanly/go-pulse/pulsetest"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsereg"
+	"github.com/seanly/pulse-devkit/pulsetest"
 )
 
 func newService(t *testing.T, mutate func(*pulsereg.Options)) (*pulsereg.Service, *pulsetest.Store, *pulsetest.Clock) {

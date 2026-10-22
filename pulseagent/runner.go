@@ -14,8 +14,8 @@ import (
 
 	"golang.org/x/time/rate"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // runner owns everything between "a job arrived on the stream" and "its result

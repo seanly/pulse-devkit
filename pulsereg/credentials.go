@@ -26,7 +26,14 @@ const credentialVersion = "v1"
 // signingInfo is the HKDF-ish label mixed into the master key. Deriving rather
 // than using the master key directly means this key cannot be confused with
 // any other key derived from the same master.
-const signingInfo = "go-pulse/agent-credential/v1"
+//
+// Its exact bytes are load-bearing rather than cosmetic: changing them derives
+// a different signing key from the same master, which invalidates every
+// credential already issued and makes the whole fleet re-enroll. The /v1
+// suffix exists so that a future change can be a deliberate version bump
+// instead of an accident. The module rename to pulse-devkit changed this
+// string while nothing was deployed — free exactly once.
+const signingInfo = "pulse-devkit/agent-credential/v1"
 
 // claims is the token's payload.
 type claims struct {

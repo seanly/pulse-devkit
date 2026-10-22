@@ -1,6 +1,6 @@
 // The agent protocol: enrollment, the long-lived connection, and results.
 //
-// This file is the contract between a go-pulse server and its agents. It
+// This file is the contract between a pulse-devkit server and its agents. It
 // changes rarely and only additively — both sides may run versions that are
 // apart by a release, so field numbers are never reused and no field is
 // repurposed.

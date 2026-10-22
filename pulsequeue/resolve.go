@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // PayloadResolver decides what a job carries at the moment it is dispatched,

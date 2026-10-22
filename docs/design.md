@@ -1,8 +1,8 @@
-# go-pulse 总体设计
+# pulse-devkit 总体设计
 
 一个 **agent 机群控制面** 框架：服务端招募 agent、持有它们的长连接、按容量把工作租约派发下去；agent 端注册、保活、执行、回报。
 
-框架不知道「工作」是什么。拨测一个证书、跑一次构建、在一批主机上执行一个运维动作，对 go-pulse 都是同一种东西：一个带超时和重试预算的 job，派给一个在线 agent，产出一个带状态的 result。
+框架不知道「工作」是什么。拨测一个证书、跑一次构建、在一批主机上执行一个运维动作，对 pulse-devkit 都是同一种东西：一个带超时和重试预算的 job，派给一个在线 agent，产出一个带状态的 result。
 
 ## 1. 来历与边界
 
@@ -14,7 +14,7 @@
 - 按 agent 剩余容量租约派发，租约过期自动回收
 - 配置下推带版本号，agent 心跳回显「已生效版本」
 
-这些是 go-pulse 的全部内容。证书、DNS、ACME、告警规则留在 certpulse。
+这些是 pulse-devkit 的全部内容。证书、DNS、ACME、告警规则留在 certpulse。
 
 **框架负责**：agent 身份与生命周期、长连接、心跳与在线判定、job 租约与重试、配置下推、标签选择。
 
@@ -26,7 +26,7 @@
 
 certpulse 的 proto 把 `fqdn/port/sni` 和 `days_remaining/not_after/chain_trusted` 写在了 Job/Result 里。这对证书拨测很顺手，但 CI 构建没有 `sni`，运维任务没有 `days_remaining`。
 
-go-pulse 的 proto 只定义**信封**，业务载荷是 `bytes`：
+pulse-devkit 的 proto 只定义**信封**，业务载荷是 `bytes`：
 
 ```protobuf
 message Job {
@@ -144,7 +144,7 @@ certpulse 的 `agentreg.Dispatcher` 已经是这个形状，所以这部分是�
 
 certpulse 里有三处包级全局，库化必须改掉：
 
-| certpulse | go-pulse |
+| certpulse | pulse-devkit |
 |---|---|
 | `logging.SetLevel(lvl)` | `Options.LevelSetter` 接口，nil 则级别下推是 no-op |
 | `version.Version` | `Options.Version string` |

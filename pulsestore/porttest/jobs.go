@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 func testJobRoundTrip(t *testing.T, s Stores) {

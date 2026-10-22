@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsestore/porttest"
-	"github.com/seanly/go-pulse/pulsetest"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsestore/porttest"
+	"github.com/seanly/pulse-devkit/pulsetest"
 )
 
 // The in-memory store is held to the same contract as the SQL one. Without

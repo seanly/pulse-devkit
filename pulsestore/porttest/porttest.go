@@ -1,4 +1,4 @@
-// Package porttest is the shared contract suite for go-pulse's storage ports.
+// Package porttest is the shared contract suite for pulse-devkit's storage ports.
 //
 // Every implementation runs the same tests: the in-memory fake, the SQL store
 // on SQLite, the SQL store on PostgreSQL, and an application's own adapter
@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsereg"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsereg"
 )
 
 // Stores is one implementation's four ports, plus the clock it reads.

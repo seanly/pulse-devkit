@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
 )
 
 // API is the AgentService surface the agent uses. Method shapes mirror the

@@ -1,4 +1,4 @@
-// Package sqlstore implements go-pulse's storage ports over database/sql,
+// Package sqlstore implements pulse-devkit's storage ports over database/sql,
 // against PostgreSQL and SQLite with one set of hand-written queries.
 //
 // The framework ships this rather than only the interfaces because the lease
@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // Dialect identifies the SQL flavour in use.

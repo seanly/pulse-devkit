@@ -18,8 +18,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulseagent"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulseagent"
 )
 
 // Codec encodes and decodes one application's job and result payloads.

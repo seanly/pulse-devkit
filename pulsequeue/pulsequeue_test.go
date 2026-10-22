@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsequeue"
-	"github.com/seanly/go-pulse/pulsetest"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsequeue"
+	"github.com/seanly/pulse-devkit/pulsetest"
 )
 
 // recordingRegistry captures pushes and can be made to fail.

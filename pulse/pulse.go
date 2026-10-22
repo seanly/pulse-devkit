@@ -1,4 +1,4 @@
-// Package pulse is go-pulse's vocabulary: the types, ports and constants that
+// Package pulse is pulse-devkit's vocabulary: the types, ports and constants that
 // the agent runtime, the control plane and the queue all agree on.
 //
 // It depends on nothing else in this module. Everything else depends on it,
@@ -67,7 +67,7 @@ const (
 )
 
 // Framework-generated error codes. An application's own codes travel in the
-// result payload or in ErrorCode; these are the ones go-pulse itself produces,
+// result payload or in ErrorCode; these are the ones pulse-devkit itself produces,
 // prefixed so they cannot collide with an application's vocabulary.
 const (
 	// CodeExecutorError is an Executor that returned an error.

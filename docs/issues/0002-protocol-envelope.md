@@ -16,7 +16,7 @@
 
 certpulse 的 `ProbeJob` 带 `fqdn/port/sni`，`ReportResultRequest` 带 `days_remaining/not_after_unix/chain_trusted/cert_json`。这些全部移出信封，进 `bytes payload`。
 
-| certpulse | go-pulse |
+| certpulse | pulse-devkit |
 |---|---|
 | `task_id` | `group_id` |
 | `target_id` | `subject_id` |

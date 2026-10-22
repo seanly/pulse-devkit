@@ -9,10 +9,10 @@ import (
 
 	_ "modernc.org/sqlite" // test-only: the library itself registers no driver
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsestore/porttest"
-	"github.com/seanly/go-pulse/pulsestore/sqlstore"
-	"github.com/seanly/go-pulse/pulsetest"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsestore/porttest"
+	"github.com/seanly/pulse-devkit/pulsestore/sqlstore"
+	"github.com/seanly/pulse-devkit/pulsetest"
 )
 
 // openSQLite returns a fresh in-memory database with the schema applied.

@@ -37,8 +37,8 @@ generate: ## Regenerate protobuf code under pb/
 	@which protoc > /dev/null 2>&1 || { echo "protoc not installed"; exit 1; }
 	protoc \
 		--proto_path=proto \
-		--go_out=. --go_opt=module=github.com/seanly/go-pulse \
-		--go-grpc_out=. --go-grpc_opt=module=github.com/seanly/go-pulse \
+		--go_out=. --go_opt=module=github.com/seanly/pulse-devkit \
+		--go-grpc_out=. --go-grpc_opt=module=github.com/seanly/pulse-devkit \
 		proto/pulse/v1/pulse.proto
 
 clean: ## Remove build output

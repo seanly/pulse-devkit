@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // Options configures a Service.

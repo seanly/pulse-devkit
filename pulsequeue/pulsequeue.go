@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // Loop and sizing defaults.

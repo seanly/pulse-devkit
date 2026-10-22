@@ -1,6 +1,6 @@
 // The agent protocol: enrollment, the long-lived connection, and results.
 //
-// This file is the contract between a go-pulse server and its agents. It
+// This file is the contract between a pulse-devkit server and its agents. It
 // changes rarely and only additively — both sides may run versions that are
 // apart by a release, so field numbers are never reused and no field is
 // repurposed.
@@ -1166,7 +1166,7 @@ const file_pulse_v1_pulse_proto_rawDesc = "" +
 	"\fAgentService\x12A\n" +
 	"\bRegister\x12\x19.pulse.v1.RegisterRequest\x1a\x1a.pulse.v1.RegisterResponse\x12>\n" +
 	"\aConnect\x12\x16.pulse.v1.AgentMessage\x1a\x17.pulse.v1.ServerMessage(\x010\x01\x12M\n" +
-	"\fReportResult\x12\x1d.pulse.v1.ReportResultRequest\x1a\x1e.pulse.v1.ReportResultResponseB0Z.github.com/seanly/go-pulse/pb/pulse/v1;pulsev1b\x06proto3"
+	"\fReportResult\x12\x1d.pulse.v1.ReportResultRequest\x1a\x1e.pulse.v1.ReportResultResponseB4Z2github.com/seanly/pulse-devkit/pb/pulse/v1;pulsev1b\x06proto3"
 
 var (
 	file_pulse_v1_pulse_proto_rawDescOnce sync.Once

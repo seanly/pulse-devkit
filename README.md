@@ -1,8 +1,8 @@
-# go-pulse
+# pulse-devkit
 
 一个 **agent 机群控制面** 框架：服务端招募 agent、持有它们的长连接、按容量把工作租约派发下去；agent 端注册、保活、执行、回报。
 
-框架不知道「工作」是什么。拨测一个证书、跑一次构建、在一批主机上执行一个运维动作，对 go-pulse 都是同一种东西：一个带超时和重试预算的 job，派给一个在线 agent，产出一个带状态的 result。
+框架不知道「工作」是什么。拨测一个证书、跑一次构建、在一批主机上执行一个运维动作，对 pulse-devkit 都是同一种东西：一个带超时和重试预算的 job，派给一个在线 agent，产出一个带状态的 result。
 
 ```go
 // agent 侧：注册执行器，跑起来
@@ -106,7 +106,7 @@ v0.x，API 还会变。测试覆盖 170+ 个用例，含 sqlite 与 postgres 的
 
 ## 来历
 
-从 [certpulse](https://github.com/seanly/certpulse)（证书到期监控）里抽出来的。那套 server/agent 已经在生产里解决了上面列的所有问题，go-pulse 是把与证书无关的部分拿出来、去掉包级全局、把载荷换成不透明字节的结果。
+从 [certpulse](https://github.com/seanly/certpulse)（证书到期监控）里抽出来的。那套 server/agent 已经在生产里解决了上面列的所有问题，pulse-devkit 是把与证书无关的部分拿出来、去掉包级全局、把载荷换成不透明字节的结果。
 
 ## 开发
 
@@ -116,14 +116,16 @@ make race       # 带 race 检测
 make generate   # 重新生成 proto（需要 protoc）
 ```
 
-跨模块开发（比如和 certpulse 一起改）用父目录的 `go.work`，不要在 `go.mod` 里写 `replace`：
+跨模块开发（比如和 certpulse 一起改）用 `go.work`，不要在 `go.mod` 里写 `replace` —— replace 会被提交，下游 `go get` 到一个指向本地路径的模块就炸了。
 
 ```
 work-dir/
-├── go.work          # use ./certpulse 和 ./go-pulse
 ├── certpulse/
-└── go-pulse/
+│   └── go.work      # use . 和 ../pulse-devkit（不提交）
+└── pulse-devkit/
 ```
+
+go.work 由消费方持有，所以一个只用这个框架的项目不需要知道别人的目录怎么摆。`GOWORK=off` 走正常的模块解析，CI 和容器用那条路。
 
 ## License
 

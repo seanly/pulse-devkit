@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulseagent"
-	"github.com/seanly/go-pulse/pulsetest"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulseagent"
+	"github.com/seanly/pulse-devkit/pulsetest"
 )
 
 // blockingExecutor holds each job until release is closed, so a test can fill

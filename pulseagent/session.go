@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // session is one connection lifetime: heartbeat loop, receive loop, and the

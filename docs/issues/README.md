@@ -1,4 +1,4 @@
-# go-pulse 实施计划
+# pulse-devkit 实施计划
 
 总体设计见 [../design.md](../design.md)。本目录每个文件是一个可独立交付的 issue，编号即建议实施顺序。
 
@@ -30,7 +30,7 @@
 | [0012](0012-sqlstore.md) | 参考存储实现（postgres + sqlite） | 0003 | ✅ 已完成 |
 | [0013](0013-pulsetest.md) | 测试工具：内存 store 与假 stream | 0003 | ✅ 已完成 |
 | [0014](0014-pulsecodec.md) | 类型化载荷 codec | 0002 | ✅ 已完成 |
-| [0015](0015-certpulse-migration.md) | certpulse 迁移到 go-pulse | 0001–0014 | 🚧 进行中 |
+| [0015](0015-certpulse-migration.md) | certpulse 迁移到 pulse-devkit | 0001–0014 | 🚧 进行中 |
 | [0016](0016-payload-resolver.md) | 派发时解析载荷 | 0011 | ✅ 已完成 |
 | [0017](0017-clock-free-contract.md) | 契约套件不再需要可控时钟 | 0012, 0013 | ✅ 已完成 |
 

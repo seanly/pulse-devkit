@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsereg"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsereg"
 )
 
 // seedAgent registers an agent and returns its ID.

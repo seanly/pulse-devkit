@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
 )
 
 // FakeStream is a bidirectional stream a test drives from the server's side.

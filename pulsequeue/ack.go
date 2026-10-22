@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // Ack reacts to an agent's accept or decline of a dispatched job.

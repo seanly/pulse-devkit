@@ -1,4 +1,4 @@
-module github.com/seanly/go-pulse
+module github.com/seanly/pulse-devkit
 
 go 1.26.2
 

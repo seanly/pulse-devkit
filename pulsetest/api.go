@@ -1,4 +1,4 @@
-// Package pulsetest provides fakes for testing against go-pulse: an in-memory
+// Package pulsetest provides fakes for testing against pulse-devkit: an in-memory
 // store, a fake agent API, a recording registry and a manual clock.
 //
 // It exists because the bad paths are the ones worth testing and the hardest
@@ -15,8 +15,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulseagent"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulseagent"
 )
 
 // API is a fake pulseagent.API. It records what the agent sent and lets a test

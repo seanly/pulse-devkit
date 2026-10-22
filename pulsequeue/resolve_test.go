@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulsequeue"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulsequeue"
 )
 
 func TestResolverReplacesPayloadAtDispatchTime(t *testing.T) {

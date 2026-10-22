@@ -26,7 +26,7 @@ type LevelSetter interface {
 // Metrics is the framework's counter and gauge sink. Implementations must be
 // safe for concurrent use.
 //
-// Deliberately minimal: go-pulse does not choose a metrics library for its
+// Deliberately minimal: pulse-devkit does not choose a metrics library for its
 // host. Adapting this to prometheus, otel or statsd is a dozen lines.
 type Metrics interface {
 	// Inc adds one to a named counter.

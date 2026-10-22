@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // Clock is a manually advanced pulse.Clock.

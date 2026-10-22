@@ -19,13 +19,13 @@ import (
 
 	"google.golang.org/grpc"
 
-	pulsev1 "github.com/seanly/go-pulse/pb/pulse/v1"
-	"github.com/seanly/go-pulse/pulse"
-	"github.com/seanly/go-pulse/pulseagent"
-	"github.com/seanly/go-pulse/pulsecodec"
-	"github.com/seanly/go-pulse/pulsequeue"
-	"github.com/seanly/go-pulse/pulsereg"
-	"github.com/seanly/go-pulse/pulsetest"
+	pulsev1 "github.com/seanly/pulse-devkit/pb/pulse/v1"
+	"github.com/seanly/pulse-devkit/pulse"
+	"github.com/seanly/pulse-devkit/pulseagent"
+	"github.com/seanly/pulse-devkit/pulsecodec"
+	"github.com/seanly/pulse-devkit/pulsequeue"
+	"github.com/seanly/pulse-devkit/pulsereg"
+	"github.com/seanly/pulse-devkit/pulsetest"
 )
 
 // jobPayload and resultPayload stand in for an application's own types.

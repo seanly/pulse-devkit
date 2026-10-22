@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // bootstrapTokenBytes is the entropy in a bootstrap token. 32 bytes is far

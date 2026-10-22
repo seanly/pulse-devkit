@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // agentColumns is the select list, in the order scanAgent expects.

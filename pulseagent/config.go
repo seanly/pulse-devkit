@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/seanly/go-pulse/pulse"
+	"github.com/seanly/pulse-devkit/pulse"
 )
 
 // RuntimeConfig is everything the agent needs to run. The framework does not
